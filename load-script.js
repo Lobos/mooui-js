@@ -14,7 +14,6 @@
         'moodropmenu.js'
     ];
     var _loadScript = function (path, pre, data) {
-        console.log(path);
         if (typeof data == 'string') {
             document.write('<script type="text/java' + 'script" src="' + path + pre + data + '"></script>');
         } else {
