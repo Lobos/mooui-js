@@ -35,8 +35,7 @@ var MooDropMenu = new Class({
 		mouseoverDelay: 0,
 		listSelector: 'ul',
 		itemSelector: 'li',
-		openEvent: 'mouseenter',
-		closeEvent: 'mouseleave'
+        handle: '.handle'
 	},
 
 	initialize: function(menu, options, level){
@@ -50,6 +49,7 @@ var MooDropMenu = new Class({
 			this.fireEvent('initialize', el);
 
 			var parent = el.getParent(options.itemSelector),
+                handle = parent.getElement(options.handle) || parent.getChildren()[0],
                 self = this,
                 _k = 'DropDownOpen';
 
@@ -58,7 +58,7 @@ var MooDropMenu = new Class({
                 var selector = el.getParent(options.itemSelector);
 
                 var _close = function (event) {
-                    if (event.target == selector.getElement('a'))
+                    if (handle.contains(event.target))
                         return;
                     self.fireEvent('close', selector);
                     parent.store(_k, false);
