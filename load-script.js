@@ -11,7 +11,7 @@
         'mooselect.js',
         'form-validator.js',
         'mootable.js',
-        'moodropmenu.js'
+        'moodropdown.js'
     ];
     var _loadScript = function (path, pre, data) {
         if (typeof data == 'string') {

@@ -43,58 +43,6 @@
         }
     });
 
-    Element.implement({
-        toFormData: function () {
-            var fd = new FormData();
-            this.getElements('input, select, textarea', true).each(function(el){
-                if (!el.name || el.disabled || el.type == 'submit' || el.type == 'reset') return;
-                if (el.type == 'file') {
-                    if (el.files.length > 0)
-                        fd.append(el.name, el.files[0]);
-                } else {
-                    var value = (el.tagName.toLowerCase() == 'select') ? Element.getSelected(el).map(function(opt){
-                        return opt.value;
-                    }) : ((el.type == 'radio' || el.type == 'checkbox') && !el.checked) ? null : el.value;
-
-                    Array.from(value).each(function(val){
-                        if (typeof val != 'undefined') {
-                            fd.append(el.name, val);
-                        }
-                    });
-                }
-            });
-            return fd;
-        }
-    });
-
-    Request.implement({
-        sendFile: function (form) {
-            var fd = document.id(form).toFormData();
-
-            this.options.isSuccess = this.options.isSuccess || this.isSuccess;
-            this.running = true;
-
-            var xhr = this.xhr;
-            if ('onprogress' in new Browser.Request){
-                xhr.onloadstart = this.loadstart.bind(this);
-                xhr.onprogress = this.progress.bind(this);
-            }
-
-            xhr.open('POST', this.options.url, this.options.async, this.options.user, this.options.password);
-            if (this.options.user && 'withCredentials' in xhr) xhr.withCredentials = true;
-
-            xhr.onreadystatechange = this.onStateChange.bind(this);
-
-            xhr.setRequestHeader("enctype", "multipart/form-data");
-
-            this.fireEvent('request');
-            xhr.send(fd);
-            if (!this.options.async) this.onStateChange();
-            else if (this.options.timeout) this.timer = this.timeout.delay(this.options.timeout, this);
-            return this;
-        }
-    });
-
     String.implement({
         format: function () {
             var args = arguments;
@@ -112,6 +60,9 @@
     var ZINDEX = 1000;
     Object.extend('topZIndex', function () {
         return ZINDEX++;
+    });
+    Element.extend('topZIndex', function () {
+        return this.setStyle('z-index', Object.topZIndex());
     });
 
     Number.implement({
