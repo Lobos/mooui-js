@@ -16,7 +16,7 @@ JS_LIST = [
     'mooselect.js',
     'form-validator.js',
     'mootable.js',
-    'moodropmenu.js'
+    'moodropdown.js'
 ]
 
 def compress():

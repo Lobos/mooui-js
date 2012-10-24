@@ -8,14 +8,17 @@
     window.MooDropdown = new Class({
         Implements: [Options],
 
-        options: {},
+        options: {
+            reveal: false
+        },
 
         initialize: function (el, options) {
             this.setOptions(options);
             this.handle = document.id(el);
             this.dropbox = this.handle.getElement('.dropdown-menu') || this.handle.getNext('.dropdown-menu');
-            this.isOpen = false;
 
+            if (this.options.reveal)
+                this.fx = new Fx.Reveal(this.dropbox, {duration: 200, transitionOpacity: false});
             this.handle.addEvent('click', this.open.bind(this));
         },
 
@@ -23,8 +26,8 @@
             if (this.isOpen) return;
 
             this.handle.addClass('open');
-            this.dropbox.show();
             this.isOpen = true;
+            this.fx ? this.fx.reveal() : this.dropbox.show();
 
             var self = this;
             var _close = function () {
@@ -38,7 +41,7 @@
 
         close: function () {
             this.handle.removeClass('open');
-            this.dropbox.hide();
+            this.fx ? this.fx.dissolve() : this.dropbox.hide();
             this.isOpen = false;
         }
     });
