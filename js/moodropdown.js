@@ -23,9 +23,9 @@
         },
 
         open: function () {
-            if (this.isOpen) return;
+            if (this.isOpen || !this.dropbox) return;
 
-            this.handle.addClass('open');
+            this.handle.addClass('active');
             this.isOpen = true;
             this.fx ? this.fx.reveal() : this.dropbox.show();
 
@@ -40,7 +40,7 @@
         },
 
         close: function () {
-            this.handle.removeClass('open');
+            this.handle.removeClass('active');
             this.fx ? this.fx.dissolve() : this.dropbox.hide();
             this.isOpen = false;
         }
