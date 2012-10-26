@@ -9,15 +9,21 @@
         Implements: [Options],
 
         options: {
+            dropbox: '.dropdown-menu',
+            revealClass: 'dropdown-reveal',
+            activeClass: 'active',
             reveal: false
         },
 
         initialize: function (el, options) {
             this.setOptions(options);
             this.handle = document.id(el);
-            this.dropbox = this.handle.getElement('.dropdown-menu') || this.handle.getNext('.dropdown-menu');
+            if (typeOf(this.options.dropbox) == 'string')
+                this.dropbox = this.handle.getElement(this.options.dropbox) || this.handle.getNext(this.options.dropbox);
+            else
+                this.dropbox = document.id(this.options.dropbox);
 
-            if (this.options.reveal)
+            if (this.options.reveal || el.hasClass(this.options.revealClass))
                 this.fx = new Fx.Reveal(this.dropbox, {duration: 200, transitionOpacity: false});
             this.handle.addEvent('click', this.open.bind(this));
         },
@@ -25,7 +31,7 @@
         open: function () {
             if (this.isOpen || !this.dropbox) return;
 
-            this.handle.addClass('active');
+            this.handle.addClass(this.options.activeClass);
             this.isOpen = true;
             this.fx ? this.fx.reveal() : this.dropbox.show();
 
@@ -40,7 +46,7 @@
         },
 
         close: function () {
-            this.handle.removeClass('active');
+            this.handle.removeClass(this.options.activeClass);
             this.fx ? this.fx.dissolve() : this.dropbox.hide();
             this.isOpen = false;
         }
