@@ -65,12 +65,14 @@
                 this.form.addEvent('change:relay([validate])', this._bound.blurOrChange);
         },
 
-        addElement: function (element) {
-            var id = element.id;
+        addElement: function (el) {
+            if (typeOf(el) == 'element')
+                el = el.id;
             if (this.options.evaluateOnBlur)
-                this.form.addEvent('blur:relay(#' + id + ')', this._bound.blurOrChange);
+                this.form.addEvent('blur:relay(#' + el + ')', this._bound.blurOrChange);
             if (this.options.evaluateOnChange)
-                this.form.addEvent('change:relay(#' + id + ')', this._bound.blurOrChange);
+                this.form.addEvent('change:relay(#' + el + ')', this._bound.blurOrChange);
+            return this;
         },
 
         validate: function () {
@@ -103,7 +105,10 @@
             else
                 txt = element.get('text').trim();
 
-            var data = JSON.decode(element.get('validate'));
+            var valstr = element.get('validate');
+            if (!/^{.*}$/.test(valstr))
+                valstr = '{' + valstr + '}';
+            var data = JSON.decode(valstr);
 
             //======================== required =======================
             if (data.required && txt.length == 0) {

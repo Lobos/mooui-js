@@ -24,10 +24,11 @@
                     this.addClass(options.activeClass);
 
                     slides.hide();
-                    slides[i].show();
+                    if (slides[i])
+                        slides[i].show();
                 });
 
-                if (tab.hasClass(options.activeClass))
+                if (tab.hasClass(options.activeClass) && slides[i])
                     slides[i].show();
             });
         }
