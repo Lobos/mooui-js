@@ -18,7 +18,7 @@
         number: '{0}必须为数字',
         email: '{0}格式不正确',
         phone: '{0}格式不正确',
-        datetime: '{0}格式不正确',
+        date: '{0}格式不正确',
         url: '{0}格式不正确',
         maxlen: '不能超过{0}个字符',
         minlen: '不能少于{0}个字符',
@@ -36,6 +36,7 @@
             alpha: /^[a-z ._-]+$/i,
             alphanum: /^[a-z0-9_]+$/i,
             password: /^[\x00-\xff]+$/,
+            date: /^(19|20)\d\d[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$/,
             digit: /^[-+]?[0-9]+$/,
             number: /^[-+]?\d*\.?\d+$/,
             email: /^[a-z0-9._%-]+@[a-z0-9.-]+\.[a-z]{2,4}$/i,
@@ -82,7 +83,7 @@
                     return;
 
                 try {
-                    success = success && this.validateField(element);
+                    success = this.validateField(element) && success;
                 } catch (e) {
                     success = false;
                     Function.attempt(function () {
@@ -117,13 +118,7 @@
             }
 
             //======================== type ===========================
-            if (success && data.type == 'datetime' && txt.length > 0) {
-                var d = new Date(txt.replace(/-/g, '/'));
-                if (d.getTime() <= 0) {
-                    msg = _getMsg(data.type);
-                    success = false;
-                }
-            } else if (success && data.type && txt.length > 0 && !this.regexp[data.type].test(txt)) {
+            if (success && data.type && txt.length > 0 && !this.regexp[data.type].test(txt)) {
                 msg = _getMsg(data.type);
                 success = false;
             }
@@ -192,7 +187,7 @@
             if (success) {
                 this.fireEvent('success', element);
             } else {
-                msg = msg.format(element.get('title') || '');
+                msg = data.msg || msg.format(element.get('title') || '');
                 this.fireEvent('failure', [element, msg]);
             }
 
@@ -285,6 +280,6 @@
         { text: '邮箱', value: 'email' },
         { text: '电话', value: 'phone' },
         { text: '网址', value: 'url' },
-        { text: '日期', value: 'datetime' }
+        { text: '日期', value: 'date' }
     ];
 })();
