@@ -3,27 +3,28 @@
  * Date: 11-5-1
  * license: MIT License
  */
-var MooSelect = new Class({
+(function () {
+
+if (!this.MooUI) this.MooUI = {};
+
+MooUI.Select = new Class({
     Implements: [Options, Events],
     options: {
         name: '',
         boxWrapper: null,
         maxHeight: 200,
         borderFix: 1,
-        url: '',
         changeValue: true,
         styleClass: {
             box: 'select-box',
-            inner: 'inner',
-            item: 'item',
-            icon: 'icon'
+            inner: 'select-inner',
+            item: 'select-item'
         },
         request: {}/*,
         noneData: { text: '', value: '' },
-        initData: { text: '', value: '' },
         data: [{text:'', 'class':'', value:'', events:{}}],
+        validate: null,
         onChange: function (item) {},
-        validate: null
         */
     },
     initialize: function (container, options) {
@@ -41,10 +42,6 @@ var MooSelect = new Class({
         this.inner = new Element('div', {
             'html': initTxt,
             'class': this.options.styleClass.inner
-        }).inject(this.container);
-
-        new Element('div', {
-            'class': 'icon'
         }).inject(this.container);
 
         this.valueInput = new Element('input', {
@@ -178,7 +175,7 @@ var MooSelect = new Class({
         this.box.setStyles({
             'visibility': 'hidden',
             'left': -9999,
-            'right': -9999
+            'top': -9999
         });
         this._detachEvents();
         this.opened = false;
@@ -221,8 +218,8 @@ var MooSelect = new Class({
     }
 });
 
-MooSelect.Multiple = new Class({
-    Extends: MooSelect,
+MooUI.Select.Multiple = new Class({
+    Extends: MooUI.Select,
     options: {},
     initialize: function (container, options) {
         this.parent(container, options);
@@ -307,13 +304,12 @@ MooSelect.Multiple = new Class({
     }
 });
 
-MooSelect.Input = new Class({
-    Extends: MooSelect,
+MooUI.Select.Input = new Class({
+    Extends: MooUI.Select,
     options: {},
     initialize: function (container, options) {
         this.parent(container, options);
         this.valueInput.setStyle('display', 'block').inject(this.inner.empty());
-        var self = this;
         this.valueInput.addEvent('keyup', this.filter.bind(this));
     },
     setValue: function (txt) {
@@ -339,7 +335,7 @@ MooSelect.Input = new Class({
     }
 });
 
-MooSelect.Combine = new Class({
+MooUI.Select.Combine = new Class({
     Extends: Options,
     options: {
         request: {},
@@ -359,7 +355,8 @@ MooSelect.Combine = new Class({
     createSelector: function (value, parentSelector, initdata) {
         var self = this;
         var request = this.options.request;
-        new Request.JSON({ url: request.url,
+        new Request.JSON({
+            url: request.url,
             method: 'post',
             data: JSON.decode(request.data.format(value)),
             onSuccess: function (json) {
@@ -370,7 +367,7 @@ MooSelect.Combine = new Class({
                     'styles': { 'width': self.options.width }
                 });
 
-                var select = new MooSelect(div, { name: self.options.name, validate: self.options.validate, onChange: function (item) {
+                var select = new MooUI.Select(div, { name: self.options.name, validate: self.options.validate, onChange: function (item) {
                     if (self.options.change)
                         self.options.change(item)
                     if (select.subSelect)
@@ -390,3 +387,4 @@ MooSelect.Combine = new Class({
         .send();
     }
 });
+})();

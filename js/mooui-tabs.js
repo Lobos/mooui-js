@@ -5,7 +5,9 @@
  */
 
 (function () {
-    window.MooTabs = new Class({
+    if (!this.MooUI) this.MooUI = {};
+
+    MooUI.Tabs = new Class({
         Implements: [Options, Events],
 
         options: {

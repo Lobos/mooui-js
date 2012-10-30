@@ -2,17 +2,18 @@
     var _scriptDict = [
         'mootools-core-1.4.5.js',
         'mootools-more-1.4.0.1.js',
-        'mootools-exts.js',
         'overlay.js',
         'Fx.ProgressBar.js',
-        'mooupload.js',
-        'pager.js',
-        'openbox.js',
-        'mooselect.js',
-        'form-validator.js',
-        'mootable.js',
-        'moodropdown.js',
-        'mootabs.js'
+        'mooui.js',
+        'mooui-exts.js',
+        //'mooupload.js',
+        //'pager.js',
+        //'openbox.js',
+        'mooui-select.js',
+        'mooui-validator.js',
+        //'mootable.js',
+        'mooui-dropdown.js',
+        'mooui-tabs.js'
     ];
     var _loadScript = function (path, pre, data) {
         if (typeof data == 'string') {

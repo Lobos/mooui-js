@@ -6,7 +6,7 @@
  */
 
 (function () {
-    if (!window.Form) window.Form = {};
+    if (!this.MooUI) this.MooUI = {};
 
     /* ============= locale ======================*/
     Locale.define('zh-CHS', 'FormValidator', {
@@ -29,7 +29,7 @@
         ajax: '不正确'
     });
 
-    Form.Validator = new Class({
+    MooUI.Validator = new Class({
         Implements: [Options, Events],
 
         regexp: {
@@ -95,7 +95,7 @@
         },
 
         validateField: function (element) {
-            var _getMsg = Form.Validator.getMsg;
+            var _getMsg = MooUI.Validator.getMsg;
             var success = true,
                 msg = '',
                 txt = '',
@@ -216,11 +216,11 @@
         }
     });
 
-    Form.Validator.getMsg = function (key) {
+    MooUI.Validator.getMsg = function (key) {
         return Locale.get('FormValidator.' + key)
     };
 
-    Form.Validator.MessageBox = {
+    MooUI.Validator.MessageBox = {
         show: function (content, pos) {
             if (!this.box) this.create();
             this.errorContent.set('html', content);
@@ -270,7 +270,7 @@
         }
     };
 
-    Form.Validator.TypeDict = [
+    MooUI.Validator.TypeDict = [
         { text: '不限', value: '' },
         { text: '字母', value: 'alpha' },
         { text: '非汉字', value: 'password' },

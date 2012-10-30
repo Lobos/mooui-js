@@ -5,7 +5,9 @@
  */
 
 (function () {
-    window.MooDropdown = new Class({
+    if (!this.MooUI) this.MooUI = {};
+
+    MooUI.Dropdown = new Class({
         Implements: [Options],
 
         options: {
@@ -54,7 +56,7 @@
 
     Element.implement({
         dropdown: function(options){
-            return this.store('dropdown', new MooDropdown(this, options));
+            return this.store('dropdown', new MooUI.Dropdown(this, options));
         }
     });
 })();

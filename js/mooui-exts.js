@@ -5,6 +5,7 @@
  */
 
 (function () {
+
     Element.implement({
         innerHeight: function () {
             return this.getStyle('height').toInt() + (this.getStyle('padding-top').toInt() || 0) + (this.getStyle('padding-bottom').toInt() || 0);
@@ -88,4 +89,4 @@
         }
     });
 
-}).call(window);
+})();
