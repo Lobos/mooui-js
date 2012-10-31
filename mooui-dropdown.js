@@ -12,6 +12,7 @@
 
         options: {
             dropbox: '.dropdown-menu',
+            toggle: '.dropdown-toggle',
             revealClass: 'dropdown-reveal',
             activeClass: 'active',
             reveal: false
@@ -27,7 +28,8 @@
 
             if (this.options.reveal || el.hasClass(this.options.revealClass))
                 this.fx = new Fx.Reveal(this.dropbox, {duration: 200, transitionOpacity: false});
-            this.handle.addEvent('click', this.open.bind(this));
+            var toggle = this.handle.getElement(this.options.toggle) || this.handle;
+            toggle.addEvent('click', this.open.bind(this));
         },
 
         open: function () {
@@ -40,11 +42,11 @@
             var self = this;
             var _close = function () {
                 self.close();
-                document.body.removeEvent('click', _close);
+                document.removeEvent('click', _close);
             };
 
-            //这里需要delay一下，否则document.body.click会立刻执行。
-            document.id(document.body).addEvent.delay(50, document.body, ['click', _close]);
+            //这里需要delay一下，否则document.click会立刻执行。
+            document.addEvent.delay(50, document, ['click', _close]);
         },
 
         close: function () {

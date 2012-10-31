@@ -16,9 +16,9 @@ MooUI.Select = new Class({
         borderFix: 1,
         changeValue: true,
         styleClass: {
-            box: 'select-box',
-            inner: 'select-inner',
-            item: 'select-item'
+            //box: 'select-box',
+            box: 'dropdown-menu',
+            inner: 'select-inner'
         },
         request: {}/*,
         noneData: { text: '', value: '' },
@@ -33,16 +33,19 @@ MooUI.Select = new Class({
         this.container = document.id(container);
         var initTxt = this.container.get('html');
 
-        this.container.empty().addEvents({
-            'click': function () {
-                self.open();
-            }
-        });
+        this.container.empty();
 
         this.inner = new Element('div', {
             'html': initTxt,
-            'class': this.options.styleClass.inner
+            'class': this.options.styleClass.inner,
+            'events': {
+                'click': function () {
+                    self.open();
+                }
+            }
         }).inject(this.container);
+
+        new Element('b', { 'class': 'caret' }).inject(this.container);
 
         this.valueInput = new Element('input', {
             'type': 'text',
@@ -57,15 +60,17 @@ MooUI.Select = new Class({
         if (this.options.validate)
             this.valueInput.set('validate', this.options.validate.replace('__target__', this.container.get('id')));
 
-        this.boxWrapper = document.id(this.options.boxWrapper) || document.body;
-        this.box = new Element('div', {
+        //this.boxWrapper = document.id(this.options.boxWrapper) || document.body;
+        this.box = new Element('ul', {
             'class': this.options.styleClass.box,
             'styles': {
                 'width': this.options.width || (this.container.outerWidth() - (this.container.getStyle('border-left-width').toInt()||0) * 2),
                 'max-height': this.options.maxHeight,
                 'overflow': 'auto'
             }
-        }).inject(this.boxWrapper);
+        }).inject(this.container);
+
+        if (this.options.data) this.createData(this.options.data);
 
         return this;
     },
@@ -79,12 +84,11 @@ MooUI.Select = new Class({
         if (this.options.noneData)
             data.unshift(this.options.noneData);
         data.each(function (item) {
-            var lnk = new Element('a', {
+            var lnk = new Element('li').grab(new Element('a', {
                 'html': item.text,
                 'href': 'javascript:;',
-                'class': item['class'] || self.options.styleClass.item,
                 'events': item.events
-            });
+            }));
             if (self.options.changeValue) {
                 lnk.addEvent('click', function () {
                     self.item = item;
@@ -95,6 +99,7 @@ MooUI.Select = new Class({
             self.box.grab(lnk);
             self.links.push(lnk);
         });
+        this.setBoxPosition();
     },
     setItem: function (item) {
         this.valueInput.set('value', item.value === 0 ? '0': item.value);
@@ -157,28 +162,24 @@ MooUI.Select = new Class({
         return this;
     },
     open: function () {
-        if (this.opened) return;
+        if (this.isOpen) return;
+        this.isOpen = true;
+        this.box.show();
 
         var self = this;
-        this.setBoxPosition();
-
-        this.boxCloseEvent = function (e) {
-            self.close(e);
+        var _close = function () {
+            self.close();
+            document.removeEvent('click', _close);
         };
-        document.addEvent('click', this.boxCloseEvent);
-        this.opened = true;
+
+        //这里需要delay一下，否则document.click会立刻执行。
+        document.addEvent.delay(50, document, ['click', _close]);
     },
     close: function (event) {
-        if (event && this.container.contains(event.target))
-            return false;
-
-        this.box.setStyles({
-            'visibility': 'hidden',
-            'left': -9999,
-            'top': -9999
-        });
-        this._detachEvents();
-        this.opened = false;
+        //if (event && this.container.contains(event.target))
+        //    return false;
+        this.box.hide();
+        this.isOpen = false;
     },
     setBoxPosition: function () {
         if (Browser.ie) {
@@ -187,7 +188,9 @@ MooUI.Select = new Class({
             else
                 this.box.setStyle('height', 'auto');
         }
+        this.box.topZIndex();
 
+        /*
         var pos = this.container.getPosition(this.boxWrapper);
         var bws = this.boxWrapper == document.body ? { x:0, y:0 } : this.boxWrapper.getScroll();
         var left = pos.x - this.box.getStyle('border-left').toInt() + bws.x;
@@ -202,6 +205,7 @@ MooUI.Select = new Class({
             'top': top,
             'z-index': Object.topZIndex()
         });
+        */
     },
     destroy: function () {
         document.id(this.container).destroy();
@@ -214,7 +218,6 @@ MooUI.Select = new Class({
         }.bind(this));
     },
     _detachEvents: function () {
-        document.removeEvent('click', this.boxCloseEvent);
     }
 });
 
@@ -238,7 +241,6 @@ MooUI.Select.Multiple = new Class({
             var lnk = new Element('a', {
                 'html': item.text,
                 'href': 'javascript:;',
-                'class': item['class'] || self.options.styleClass.item,
                 'events': item.events
             });
             if (self.options.changeValue) {
