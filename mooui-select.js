@@ -11,20 +11,20 @@ MooUI.Select = new Class({
     Implements: [Options, Events],
     options: {
         name: '',
-        boxWrapper: null,
         maxHeight: 200,
         borderFix: 1,
         changeValue: true,
         styleClass: {
-            //box: 'select-box',
             box: 'dropdown-menu',
             inner: 'select-inner'
         },
+        autoLoad: false,
         request: {}/*,
         noneData: { text: '', value: '' },
         data: [{text:'', 'class':'', value:'', events:{}}],
         validate: null,
         onChange: function (item) {},
+        onLoad: function () {}
         */
     },
     initialize: function (container, options) {
@@ -60,7 +60,6 @@ MooUI.Select = new Class({
         if (this.options.validate)
             this.valueInput.set('validate', this.options.validate.replace('__target__', this.container.get('id')));
 
-        //this.boxWrapper = document.id(this.options.boxWrapper) || document.body;
         this.box = new Element('ul', {
             'class': this.options.styleClass.box,
             'styles': {
@@ -71,6 +70,7 @@ MooUI.Select = new Class({
         }).inject(this.container);
 
         if (this.options.data) this.createData(this.options.data);
+        else if (this.options.autoLoad) this.load();
 
         return this;
     },
@@ -100,6 +100,8 @@ MooUI.Select = new Class({
             self.links.push(lnk);
         });
         this.setBoxPosition();
+
+        this.fireEvent('load', this);
     },
     setItem: function (item) {
         this.valueInput.set('value', item.value === 0 ? '0': item.value);
@@ -146,14 +148,27 @@ MooUI.Select = new Class({
         }
 
         var self = this;
+
+        var _error = function (msg, txt) {
+            Function.attempt(
+                function () {
+                    console.log(msg);
+                    if (txt) console.log(txt);
+                },
+                function () {
+                    alert(msg);
+                }
+            );
+        };
         var request_options = {
             onComplete: function (json) {
                 if (json.status == 1)
                     self.createData(json.data);
                 else
-                    alert(json.msg);
+                    _error(json.msg);
                 return this;
-            }
+            },
+            onError: _error
         };
         options = Object.merge(this.options.request, options);
         Object.merge(request_options, options);
@@ -175,9 +190,7 @@ MooUI.Select = new Class({
         //这里需要delay一下，否则document.click会立刻执行。
         document.addEvent.delay(50, document, ['click', _close]);
     },
-    close: function (event) {
-        //if (event && this.container.contains(event.target))
-        //    return false;
+    close: function () {
         this.box.hide();
         this.isOpen = false;
     },
@@ -189,35 +202,13 @@ MooUI.Select = new Class({
                 this.box.setStyle('height', 'auto');
         }
         this.box.topZIndex();
-
-        /*
-        var pos = this.container.getPosition(this.boxWrapper);
-        var bws = this.boxWrapper == document.body ? { x:0, y:0 } : this.boxWrapper.getScroll();
-        var left = pos.x - this.box.getStyle('border-left').toInt() + bws.x;
-        var top = pos.y + this.container.outerHeight() + bws.y;
-
-        if (top + this.box.getStyle('height').toInt() > this.boxWrapper.getSize().y + this.boxWrapper.getScroll().y)
-            top = pos.y - this.box.outerHeight() + bws.y;
-
-        this.box.setStyles({
-            'visibility': 'visible',
-            'left': left + this.options.borderFix,
-            'top': top,
-            'z-index': Object.topZIndex()
-        });
-        */
     },
     destroy: function () {
         document.id(this.container).destroy();
         this.box.destroy();
         Function.attempt(function () {
-            this._detachEvents();
-        }.bind(this));
-        Function.attempt(function () {
             this.subSelect.destroy();
         }.bind(this));
-    },
-    _detachEvents: function () {
     }
 });
 
