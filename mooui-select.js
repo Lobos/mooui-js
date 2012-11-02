@@ -16,7 +16,8 @@ MooUI.Select = new Class({
         changeValue: true,
         styleClass: {
             box: 'dropdown-menu',
-            inner: 'select-inner'
+            inner: 'select-inner',
+            checked: 'checked'
         },
         autoLoad: false,
         request: {}/*,
@@ -45,8 +46,6 @@ MooUI.Select = new Class({
             }
         }).inject(this.container);
 
-        new Element('b', { 'class': 'caret' }).inject(this.container);
-
         this.valueInput = new Element('input', {
             'type': 'text',
             'id': String.uniqueID(),
@@ -57,15 +56,17 @@ MooUI.Select = new Class({
             }
         }).inject(this.container);
 
-        if (this.options.validate)
+        if (this.options.validate) {
             this.valueInput.set('validate', this.options.validate.replace('__target__', this.container.get('id')));
+        }
 
         this.box = new Element('ul', {
             'class': this.options.styleClass.box,
             'styles': {
                 'width': this.options.width || (this.container.outerWidth() - (this.container.getStyle('border-left-width').toInt()||0) * 2),
                 'max-height': this.options.maxHeight,
-                'overflow': 'auto'
+                'overflow': 'auto',
+                'z-index': Object.topZIndex()
             }
         }).inject(this.container);
 
@@ -101,7 +102,7 @@ MooUI.Select = new Class({
         });
         this.setBoxPosition();
 
-        this.fireEvent('load', this);
+        this.fireEvent('load');
     },
     setItem: function (item) {
         this.valueInput.set('value', item.value === 0 ? '0': item.value);
@@ -137,6 +138,7 @@ MooUI.Select = new Class({
     },
     clearValue: function () {
         this.valueInput.set('value', '');
+        this.valueInput.store('data', null);
         this.inner.set('html', '');
         return this;
     },
@@ -182,9 +184,8 @@ MooUI.Select = new Class({
         this.box.show();
 
         var self = this;
-        var _close = function () {
-            self.close();
-            document.removeEvent('click', _close);
+        var _close = this._close = function (event) {
+            self.close(event);
         };
 
         //这里需要delay一下，否则document.click会立刻执行。
@@ -193,22 +194,28 @@ MooUI.Select = new Class({
     close: function () {
         this.box.hide();
         this.isOpen = false;
+        this._detachEvents();
     },
     setBoxPosition: function () {
-        if (Browser.ie) {
+        if (Browser.Engine.trident4) {
             if (this.box.getStyle('height').toInt() >= this.options.maxHeight)
                 this.box.setStyle('height', this.options.maxHeight);
             else
                 this.box.setStyle('height', 'auto');
         }
-        this.box.topZIndex();
     },
     destroy: function () {
+        //this.box.destroy();
         document.id(this.container).destroy();
-        this.box.destroy();
+        Function.attempt(function () {
+            this._detachEvents();
+        }.bind(this));
         Function.attempt(function () {
             this.subSelect.destroy();
         }.bind(this));
+    },
+    _detachEvents: function () {
+        document.removeEvent('click', this._close);
     }
 });
 
@@ -229,15 +236,15 @@ MooUI.Select.Multiple = new Class({
         if (this.options.noneData)
             data.unshift(this.options.noneData);
         data.each(function (item) {
-            var lnk = new Element('a', {
+            var lnk = new Element('li').grab(new Element('a', {
                 'html': item.text,
                 'href': 'javascript:;',
                 'events': item.events
-            });
+            }));
             if (self.options.changeValue) {
                 lnk.addEvent('click', function () {
                     self.item = item;
-                    if (lnk.hasClass('checked'))
+                    if (lnk.hasClass(self.options.styleClass.checked))
                         self.uncheckItem(lnk, item);
                     else
                         self.checkItem(lnk, item);
@@ -248,13 +255,14 @@ MooUI.Select.Multiple = new Class({
             self.links[item.value] = lnk;
         });
     },
-    checkItem: function (el, item) {
-        el.addClass('checked');
+    checkItem: function (el, item, lazy) {
+        el.addClass(this.options.styleClass.checked);
         this.checkedItems[item.value] = item;
-        this.showCheckValue();
+        if (!lazy)
+            this.showCheckValue();
     },
     uncheckItem: function (el, item) {
-        el.removeClass('checked');
+        el.removeClass(this.options.styleClass.checked);
         delete this.checkedItems[item.value];
         this.showCheckValue();
     },
@@ -268,6 +276,14 @@ MooUI.Select.Multiple = new Class({
         }
         this.valueInput.set('value', val.join(','));
         this.inner.set('html', txt.join(','));
+        this.fireEvent('change', [this._getCheckedItemArray()]);
+    },
+    _getCheckedItemArray: function () {
+        var items = [];
+        Object.each(this.checkedItems, function (item) {
+            items.push(item);
+        });
+        return items;
     },
     setValue: function (valuelist) {
         if (!valuelist) return this;
@@ -277,31 +293,37 @@ MooUI.Select.Multiple = new Class({
         valuelist.each(function (value) {
             Array.each(self.data || [], function (item) {
                 if (value == item.value) {
-                    self.checkItem(self.links[value], item);
+                    self.checkItem(self.links[value], item, true);
                 }
             });
         });
+        this.showCheckValue();
+        return this;
+    },
+    clearValue: function () {
+        this.box.getElements('li').removeClass(this.options.styleClass.checked);
+        this.checkedItems = {};
+        this.showCheckValue();
         return this;
     },
     close: function (event) {
-        if (event && (this.container.contains(event.target) || this.box.contains(event.target)))
+        if (event && this.box.contains(event.target))
             return false;
 
-        this.box.setStyles({
-            'visibility': 'hidden',
-            'left': -9999,
-            'right': -9999
-        });
-        this._detachEvents();
-        this.opened = false;
+        this.parent(event);
     }
 });
 
 MooUI.Select.Input = new Class({
     Extends: MooUI.Select,
-    options: {},
+    options: {
+        styleClass: {
+            input: 'select-input'
+        }
+    },
     initialize: function (container, options) {
         this.parent(container, options);
+        this.inner.addClass(this.options.styleClass.input);
         this.valueInput.setStyle('display', 'block').inject(this.inner.empty());
         this.valueInput.addEvent('keyup', this.filter.bind(this));
     },
@@ -310,6 +332,7 @@ MooUI.Select.Input = new Class({
     },
     setItem: function (item) {
         this.valueInput.set('value', item.text);
+        this.filter();
     },
     clearValue: function () {
         this.valueInput.set('value', '');
@@ -328,6 +351,7 @@ MooUI.Select.Input = new Class({
     }
 });
 
+//多级联动的Select，未测试完全，慎用。
 MooUI.Select.Combine = new Class({
     Extends: Options,
     options: {
@@ -362,7 +386,7 @@ MooUI.Select.Combine = new Class({
 
                 var select = new MooUI.Select(div, { name: self.options.name, validate: self.options.validate, onChange: function (item) {
                     if (self.options.change)
-                        self.options.change(item)
+                        self.options.change(item);
                     if (select.subSelect)
                         select.subSelect.destroy();
                     self.createSelector(item.value, select, initdata);
