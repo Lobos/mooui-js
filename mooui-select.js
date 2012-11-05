@@ -10,7 +10,7 @@ if (!this.MooUI) this.MooUI = {};
 MooUI.Select = new Class({
     Implements: [Options, Events],
     options: {
-        name: '',
+        name: '', //required
         maxHeight: 200,
         borderFix: 1,
         changeValue: true,
@@ -319,7 +319,9 @@ MooUI.Select.Input = new Class({
     options: {
         styleClass: {
             input: 'select-input'
-        }
+        },
+        size: 50,
+        ajaxFilter: false
     },
     initialize: function (container, options) {
         this.parent(container, options);
@@ -340,14 +342,21 @@ MooUI.Select.Input = new Class({
     },
     filter: function () {
         var val = this.valueInput.get('value').toLowerCase();
-        this.links.each(function (lnk) {
-            if (lnk.get('text').toLowerCase().contains(val)) {
-                lnk.setStyle('display', 'block');
-            } else {
-                lnk.setStyle('display', 'none');
-            }
-        });
-        this.setBoxPosition();
+        if (this.options.ajaxFilter) {
+            var data = { size: this.options.size };
+            data[this.options.name] = val;
+            var options = Object.merge(Object.clone(this.options.request.data || {}), data);
+            this.load(options);
+        } else {
+            this.links.each(function (lnk) {
+                if (lnk.get('text').toLowerCase().contains(val)) {
+                    lnk.setStyle('display', 'block');
+                } else {
+                    lnk.setStyle('display', 'none');
+                }
+            });
+            this.setBoxPosition();
+        }
     }
 });
 
