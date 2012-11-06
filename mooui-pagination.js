@@ -28,6 +28,7 @@
                 options = { index: options };
             this.setOptions(options);
             this.draw(this.options.index);
+            return this;
         },
         pageChange: function (index) {
             this.fireEvent('pageChange', index);
@@ -51,7 +52,7 @@
             var ul = new Element('ul').inject(this.container);
 
 
-            if (index > 1) {
+            if (this.options.index > 1) {
                 this.createItem('&laquo;', function () {
                     self.pageChange(self.options.index - 1);
                 }).inject(ul);
@@ -71,7 +72,7 @@
                     self.pageChange(maxPages);
                 }).inject(ul);
             }
-            if (index < max) {
+            if (this.options.index < max) {
                 this.createItem('&raquo;', function () {
                     self.pageChange(self.options.index + 1);
                 }).inject(ul);
@@ -79,9 +80,9 @@
 
 
             if (this.options.showCount) {
-                var maxCount = index * this.options.size;
+                var maxCount = this.options.index * this.options.size;
                 maxCount = maxCount > this.options.total ? this.options.total : maxCount;
-                var startCount = ((index - 1) * this.options.size + 1);
+                var startCount = ((this.options.index - 1) * this.options.size + 1);
                 var account = Locale.get('Pager.count').substitute({
                     total: this.options.total,
                     start: startCount,
@@ -92,6 +93,8 @@
                     'html': account
                 }).inject(this.container);
             }
+
+            return this;
         },
         createItem: function (html, fn, current) {
             var li = new Element('li').grab(

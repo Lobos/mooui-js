@@ -4,33 +4,38 @@
 */
 
 (function () {
-    Locale.define('zh-CHS', 'MooTable', {
+    Locale.define('zh-CHS', 'MooUI.Table', {
         search: '过滤',
         clear: '重置',
         True: '是',
         False: '否'
     });
 
-    window.MooTable = new Class({
+    if (!this.MooUI) this.MooUI = {};
+    MooUI.Table = new Class({
         Implements: [Options, Events],
         options: {
             request: null,
             filterAble: false,
             filterHide: false,
             pageAble: true,
-            page: { size: 0 },
-            showAccount: true,
-            filterCheckbox: null
+            pagination: { size: 0 },
+            filterCheckbox: null,
+            header: {}
         },
 
         css: {
             checkbox: 'checkbox',
+            checked: 'checked',
             bool: 'bool',
             rows: ['odd', 'even'],
-            order: 'sort-none',
-            orderUp: 'sort-up',
-            orderDown: 'sort-down',
-            singlePage: 'single-page'
+            sort: 'icon-sort',
+            sortUp: 'icon-sort-up',
+            sortDown: 'icon-sort-down',
+            tdTrue: 'icon-ok',
+            tdFalse: 'icon-remove',
+            singlePage: 'single-page',
+            pagination: 'pagination'
         },
 
         initialize: function (table, options) {
@@ -69,7 +74,7 @@
             });
 
             new Element('button', {
-                'html': Locale.get('MooTable.search'),
+                'html': Locale.get('MooUI.Table.search'),
                 'type': 'button',
                 'class': 'btn',
                 'events': {
@@ -80,7 +85,7 @@
             }).inject(this.filterBox);
 
             new Element('button', {
-                'html': Locale.get('MooTable.clear'),
+                'html': Locale.get('MooUI.Table.clear'),
                 'type': 'button',
                 'class': 'btn',
                 'events': {
@@ -114,7 +119,7 @@
                         sel.setStyle('width', h.filter.width);
                     else if (h.type == 'bool')
                         sel.setStyle('width', 40);
-                    var select = new MooSelect(sel, {
+                    var select = new MooUI.Select(sel, {
                         name: h.key,
                         title: h.name,
                         'noneData': { text: '&nbsp;', value: ''}
@@ -125,7 +130,7 @@
                     else
                         select.load({
                             json: this.options.filterCheckbox ||
-                                [{ value:1, text: Locale.get('MooTable.True') }, { value:0, text: Locale.get('MooTable.False') }]
+                                [{ value:1, text: Locale.get('MooUI.Table.True') }, { value:0, text: Locale.get('MooUI.Table.False') }]
                         });
 
                     this.filterItems.push(select);
@@ -168,17 +173,17 @@
                 var el;
                 if (sort) {
                     el = new Element('a', {
-                        html: html + '<i class="{0}"></i>'.format(self.css.order),
+                        html: html + '<i class="{0}"></i>'.format(self.css.sort),
                         href: 'javascript:;',
                         events: {
                             click: function () {
                                 var icon = this.getElement('i');
-                                var isUp = icon.hasClass(self.css.orderUp);
-                                tr.getElements('i').set('class', self.css.order);
+                                var isUp = icon.hasClass(self.css.sortUp);
+                                tr.getElements('i').set('class', self.css.sort);
                                 if (isUp) {
-                                    icon.set('class', self.css.orderDown);
+                                    icon.set('class', self.css.sortDown);
                                 } else {
-                                    icon.set('class', self.css.orderUp);
+                                    icon.set('class', self.css.sortUp);
                                 }
                                 self.setSort(!isUp, key).load();
                             }
@@ -197,13 +202,16 @@
                 switch (h.type) {
                     case 'checkbox':
                         th.addClass(self.css.checkbox);
-                        new Element('a', {
-                            'class': self.css.checkbox,
+                        if (!h.style || !h.styles.width) th.setStyle('width', 14);
+                        var cbk = new Element('a', {
                             'href': 'javascript:;',
                             'events': {
                                 'click': function () { self.checkAll(this) }
                             }
                         }).inject(th);
+                        self.addEvent('load', function () {
+                            cbk.removeClass(self.css.checked);
+                        });
                         break;
                     default:
                         _crth(h.sort, h.name, h.key).inject(th);
@@ -221,20 +229,19 @@
             var tfoot = new Element('tfoot').inject(this.table, 'bottom');
             var tr = new Element('tr').inject(tfoot);
             var td = new Element('td', {
-                'colspan': this.options.header.length
+                'colspan': this.table.getElements('thead th').length,
+                'class': this.css.pagination
             }).inject(tr);
-            this.page = new Pager(td, {
-                size: this.options.page.size,
-                showAccount: this.options.showAccount,
-                onPageChange: this.pageChange.bind(this)
-            });
+
+            this.page = new MooUI.Pagination(td, this.options.pagination);
+            this.page.addEvent('pageChange', this.pageChange.bind(this));
         },
 
         createBody: function (item, index) {
             var self = this;
             var header = this.options.header || [];
             var tr = new Element('tr', {
-                'class': self.css.rows[index],
+                //'class': self.css.rows[index],
                 'events': {
                     'mouseover': function () {
                         this.getElements('td').addClass('highlight');
@@ -253,23 +260,15 @@
                 switch (h.type) {
                     case 'checkbox':
                         td.addClass(self.css.checkbox);
-                        td.grab(new Element('a', {
-                            'class': self.css.checkbox,
-                            'href': 'javascript:;',
-                            'events': {
-                                'click': function () {
-                                    if (this.hasClass('checked'))
-                                        this.removeClass('checked');
-                                    else
-                                        this.addClass('checked');
-                                    if (h.click) h.click(this.hasClass('checked'), item);
-                                }
-                            }
-                        }).store('item', item));
+                        var cbk = new Element('a').store('item', item).inject(td);
+                        td.addEvent('click', function () {
+                            cbk.toggleClass(self.css.checked);
+                            if (h.click) h.click(cbk.hasClass(self.css.checked), item);
+                        });
                         break;
                     case 'bool':
                         td.addClass('center');
-                        td.grab(new Element('i', { 'class': 'icon-' + (item[h.key] ? 't' : 'x') }));
+                        td.grab(new Element('i', { 'class': item[h.key] ? self.css.tdTrue : self.css.tdFalse }));
                         break;
                     case 'template':
                         td.set('html', h.template.substitute(item));
@@ -284,14 +283,13 @@
         },
 
         checkAll: function (el) {
-            if (el.hasClass('checked')) {
-                el.removeClass('checked');
-                this.table.getElements('tbody .' + this.css.checkbox).addClass('checked');
-                this.table.getElements('tbody .' + this.css.checkbox).fireEvent('click');
+            el.toggleClass(this.css.checked);
+            if (el.hasClass(this.css.checked)) {
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             } else {
-                el.addClass('checked');
-                this.table.getElements('tbody .' + this.css.checkbox).removeClass('checked');
-                this.table.getElements('tbody .' + this.css.checkbox).fireEvent('click');
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             }
         },
 
@@ -306,23 +304,21 @@
             } else {
                 items = [];
             }
-            this.table.getElements('tbody .' + this.css.checkbox).each(function (lnk) {
-                if (lnk.hasClass('checked')) {
-                    var data = lnk.retrieve('item');
-                    if (keys.length > 0) {
-                        Array.each(keys, function (key) {
-                            items[key].push(data[key]);
-                        });
-                    } else {
-                        items.push(data);
-                    }
+            this.table.getElements('tbody .' + this.css.checkbox + ' a.' + this.css.checked).each(function (lnk) {
+                var data = lnk.retrieve('item');
+                if (keys.length > 0) {
+                    Array.each(keys, function (key) {
+                        items[key].push(data[key]);
+                    });
+                } else {
+                    items.push(data);
                 }
             });
             return items;
         },
 
         getCheckedCount: function () {
-            return this.table.getElements('tbody .' + this.css.checkbox + '.checked').length;
+            return this.table.getElements('tbody .' + this.css.checkbox + ' a.' + this.css.checked).length;
         },
 
         setRequest: function (options) {
@@ -350,51 +346,54 @@
             });
         },
 
+        createData: function (json) {
+            var body = this.table.getElement('tbody');
+            var row_len = this.css.rows.length;
+            if (json.status == 1) {
+                body.empty();
+                json.data.each(function (item, index) {
+                    var tr = this.createBody(item, index % row_len);
+                    body.grab(tr);
+                }.bind(this));
+                if (this.page)
+                    this.page.change({
+                        'table': this,
+                        'total': json.total,
+                        'index': json.index,
+                        'size': json.size
+                    });
+
+                /*
+                if (this.options.pagination.size >= json.total)
+                    this.table.getElement('tfoot').addClass(this.css.singlePage);
+                else
+                    this.table.getElement('tfoot').removeClass(this.css.singlePage);
+                */
+
+                this.fireEvent('load', [body.getElements('tr'), json.data]);
+            } else {
+                Function.attempt(function () {
+                    console.log(json.msg);
+                });
+            }
+            this.table.unmask();
+            return this;
+        },
+
         load: function (options) {
             options = options || {};
             var self = this;
-            var body = this.table.getElement('tbody');
             Function.attempt(function () {
                 self.table.loading(); //Element.loading
             }, function () {
                 self.table.mask();
             });
-            var row_len = self.css.rows.length;
-            function success(json) {
-                if (json.status == 1) {
-                    body.empty();
-                    json.data.each(function (item, index) {
-                        var tr = self.createBody(item, index % row_len);
-                        body.grab(tr);
-                    });
-                    if (self.page)
-                        self.page.change({
-                            'table': self,
-                            'total': json.total,
-                            'index': json.index,
-                            'size': json.size
-                        });
-
-                    if (self.options.page.size >= json.total)
-                        self.table.getElement('tfoot').addClass(self.css.singlePage);
-                    else
-                        self.table.getElement('tfoot').removeClass(self.css.singlePage);
-
-                    self.fireEvent('load', [body.getElements('tr'), json.data]);
-                } else {
-                    Function.attempt(function () {
-                        console.log(json.msg);
-                    });
-                }
-                self.table.unmask();
-                return self;
-            }
             if (options.json) {
-                success(options.json);
+                this.createData(options.json);
                 return this;
             }
 
-            this.request.onComplete = success;
+            this.request.onComplete = this.createData.bind(this);
             Object.merge(this.request, options);
             new Request.JSON(this.request).send();
             return this;
