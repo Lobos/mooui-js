@@ -29,12 +29,16 @@
             checked: 'checked',
             bool: 'bool',
             rows: ['odd', 'even'],
-            sort: 'icon-sort',
+
+            sort: 'sort',
+            sortNormal: 'icon-sort',
             sortUp: 'icon-sort-up',
             sortDown: 'icon-sort-down',
+            sortTip: 'sort-tip',
+
             tdTrue: 'icon-ok',
             tdFalse: 'icon-remove',
-            singlePage: 'single-page',
+
             pagination: 'pagination'
         },
 
@@ -166,39 +170,61 @@
         createHeader: function () {
             var self = this;
             var header = this.options.header || [];
-            var thead = new Element('thead');
-            var tr = new Element('tr');
+            var thead = new Element('thead').inject(this.table, 'top');
+            var tr = new Element('tr').inject(thead);
 
-            var _crth = function (sort, html, key) {
-                var el;
-                if (sort) {
+            var _crth = function (th, h) {
+                if (h.sort) {
+                    var el, tip, icon;
+                    var _clearSort = function () {
+                        tr.getElements('a > i.' + self.css.sortUp + ', a > i.' + self.css.sortDown).set('class', self.css.sortNormal);
+                    };
                     el = new Element('a', {
-                        html: html + '&nbsp;<i class="{0}"></i>'.format(self.css.sort),
+                        html: h.name,
+                        'class': self.css.sort,
                         href: 'javascript:;',
                         events: {
                             click: function () {
-                                var icon = this.getElement('i');
-                                var isUp = icon.hasClass(self.css.sortUp);
-                                tr.getElements('i').set('class', self.css.sort);
-                                if (isUp) {
-                                    icon.set('class', self.css.sortDown);
-                                } else {
-                                    icon.set('class', self.css.sortUp);
-                                }
-                                self.setSort(!isUp, key).load();
+                                tip.toggle();
+                                tip.isVisible() ? icon.fade('hide') : icon.fade('show');
                             }
                         }
-                    });
+                    }).inject(th);
+                    icon = new Element('i', { 'class': self.css.sortNormal }).inject(el);
+                    tip = new Element('div', {
+                        'class': self.css.sortTip,
+                        'styles': {
+                            'left': icon.getPosition(th).x
+                        }
+                    }).inject(el);
+                    new Element('i', {
+                        'class': self.css.sortUp,
+                        'events': {
+                            click: function () {
+                                self.setSort(true, h.key).load();
+                                _clearSort();
+                                icon.set('class', self.css.sortUp);
+                            }
+                        }
+                    }).inject(tip);
+                    new Element('i', {
+                        'class': self.css.sortDown,
+                        'events': {
+                            click: function () {
+                                self.setSort(false, h.key).load();
+                                _clearSort();
+                                icon.set('class', self.css.sortDown);
+                            }
+                        }
+                    }).inject(tip);
                 } else {
-                    el = new Element('span', { 'html': html });
+                    new Element('span', { 'html':h.name }).inject(th);
                 }
-
-                return el;
             };
 
             header.each(function (h) {
                 if (h.type == 'hidden') return;
-                var th = new Element('th', { styles: h.styles });
+                var th = new Element('th', { styles: h.styles }).inject(tr);
                 switch (h.type) {
                     case 'checkbox':
                         th.addClass(self.css.checkbox);
@@ -214,13 +240,11 @@
                         });
                         break;
                     default:
-                        _crth(h.sort, h.name, h.key).inject(th);
+                        _crth(th, h);
                         break;
                 }
-                tr.grab(th);
             });
 
-            thead.grab(tr).inject(this.table, 'top');
             if (!this.table.getElement('tbody'))
                 this.table.grab(new Element('tbody'));
         },
@@ -331,11 +355,11 @@
             return this;
         },
 
-        setSort: function (isUp, key) {
+        setSort: function (asc, key) {
             var _d = this.request.data;
             _d.size = this.options.pagination.size;
             _d.index = 1;
-            _d.sort = { asc: (isUp ? 1 : -1), key: key };
+            _d.sort = { asc: (asc ? 1 : -1), key: key };
 
             return this;
         },
