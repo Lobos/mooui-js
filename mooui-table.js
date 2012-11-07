@@ -48,7 +48,7 @@
             if (this.options.pageAble) {
                 this.createFooter();
                 this.request.data = this.request.data || {};
-                Object.merge(this.request.data, this.options.page);
+                Object.merge(this.request.data, this.options.pagination);
             }
 
             if (this.options.filterAble)
@@ -173,7 +173,7 @@
                 var el;
                 if (sort) {
                     el = new Element('a', {
-                        html: html + '<i class="{0}"></i>'.format(self.css.sort),
+                        html: html + '&nbsp;<i class="{0}"></i>'.format(self.css.sort),
                         href: 'javascript:;',
                         events: {
                             click: function () {
@@ -327,15 +327,15 @@
         },
 
         setFilter: function (data) {
-            this.request.data = Object.merge({ size: this.options.page.size, index: 1 }, data);
+            this.request.data = Object.merge({ size: this.options.pagination.size, index: 1 }, data);
             return this;
         },
 
         setSort: function (isUp, key) {
             var _d = this.request.data;
-            _d.size = this.options.page.size;
+            _d.size = this.options.pagination.size;
             _d.index = 1;
-            _d.sort = { order: isUp ? 1 : -1, key: key };
+            _d.sort = { asc: (isUp ? 1 : -1), key: key };
 
             return this;
         },
