@@ -4,8 +4,8 @@
 */
 
 (function () {
-    Locale.define('zh-CHS', 'MooUI.Table', {
-        search: '过滤',
+    Locale.define('zh-CHS', 'MooUI_Table', {
+        search: '筛选',
         clear: '重置',
         True: '是',
         False: '否'
@@ -19,31 +19,32 @@
             filterAble: false,
             filterHide: false,
             pageAble: true,
-            pagination: { size: 0 },
+            pagination: { size: 0, index: 1 },
             filterCheckbox: null,
-            header: {}
-        },
+            header: {},
+            css: {
+                checkbox: 'checkbox',
+                checked: 'checked',
+                bool: 'bool',
 
-        css: {
-            checkbox: 'checkbox',
-            checked: 'checked',
-            bool: 'bool',
-            rows: ['odd', 'even'],
+                filterBox: 'table-filter form-inline',
 
-            sort: 'sort',
-            sortNormal: 'icon-sort',
-            sortUp: 'icon-sort-up',
-            sortDown: 'icon-sort-down',
-            sortTip: 'sort-tip',
+                sort: 'sort',
+                sortNormal: 'icon-sort',
+                sortUp: 'icon-sort-up',
+                sortDown: 'icon-sort-down',
+                sortTip: 'sort-tip',
 
-            tdTrue: 'icon-ok',
-            tdFalse: 'icon-remove',
+                tdTrue: 'icon-ok',
+                tdFalse: 'icon-remove',
 
-            pagination: 'pagination'
+                pagination: 'pagination'
+            }
         },
 
         initialize: function (table, options) {
             this.setOptions(options);
+            this.css = this.options.css;
             this.table = document.id(table);
             this.createHeader();
             this.request = this.options.request || {};
@@ -52,7 +53,10 @@
             if (this.options.pageAble) {
                 this.createFooter();
                 this.request.data = this.request.data || {};
-                Object.merge(this.request.data, this.options.pagination);
+                Object.merge(this.request.data, {
+                    size: this.options.pagination.size,
+                    index: this.options.pagination.index
+                });
             }
 
             if (this.options.filterAble)
@@ -65,7 +69,7 @@
             var self = this;
 
             this.filterBox = new Element('div', {
-                'class': 'table-filter'
+                'class': this.css.filterBox
             }).inject(this.table, 'before');
 
             if (this.options.filterHide)
@@ -78,9 +82,9 @@
             });
 
             new Element('button', {
-                'html': Locale.get('MooUI.Table.search'),
+                'html': Locale.get('MooUI_Table.search'),
                 'type': 'button',
-                'class': 'btn',
+                'class': 'btn btn-primary',
                 'events': {
                     'click': function () {
                         self.filter();
@@ -89,9 +93,9 @@
             }).inject(this.filterBox);
 
             new Element('button', {
-                'html': Locale.get('MooUI.Table.clear'),
+                'html': Locale.get('MooUI_Table.clear'),
                 'type': 'button',
-                'class': 'btn',
+                'class': 'btn btn-inverse',
                 'events': {
                     'click': function () {
                         self.fireEvent('filterClear');
@@ -115,26 +119,42 @@
                         input.set('value', '');
                     });
                     break;
+                case 'bool':
                 case 'select':
+                case 'multi-select':
                     var sel = new Element('div', {
                         'class': 'select'
                     }).inject(el);
                     if (h.filter.width)
-                        sel.setStyle('width', h.filter.width);
-                    else if (h.type == 'bool')
-                        sel.setStyle('width', 40);
-                    var select = new MooUI.Select(sel, {
+                        sel.setStyle('min-width', h.filter.width);
+                    else if (h.filter.type == 'bool')
+                        sel.setStyle('min-width', 40);
+                    else
+                        sel.setStyle('min-width', 80);
+
+                    var select,
+                        options = {
                         name: h.key,
                         title: h.name,
-                        'noneData': { text: '&nbsp;', value: ''}
-                    });
+                        noneData: { text: '&nbsp;', value: ''},
+                        onLoad: function () {
+                            if (h.filter.def) this.setValue(h.filter.def);
+                        }
+                    };
 
-                    if (h.filter.url)
-                        select.load({ url: h.filter.url, method: 'get' });
+                    if (h.filter.type == 'multi-select')
+                        select = new MooUI.Select.Multiple(sel, options);
                     else
+                        select = new MooUI.Select(sel, options);
+
+                    if (h.filter.data)
+                        select.load({ json:h.filter.data });
+                    else if (h.filter.url)
+                        select.load({ url: h.filter.url, method: 'get' });
+                    else if (h.filter.type == 'bool')
                         select.load({
                             json: this.options.filterCheckbox ||
-                                [{ value:1, text: Locale.get('MooUI.Table.True') }, { value:0, text: Locale.get('MooUI.Table.False') }]
+                                [{ value:1, text: Locale.get('MooUI_Table.True') }, { value:0, text: Locale.get('MooUI_Table.False') }]
                         });
 
                     this.filterItems.push(select);
@@ -232,7 +252,7 @@
                         var cbk = new Element('a', {
                             'href': 'javascript:;',
                             'events': {
-                                'click': function () { self.checkAll(this) }
+                                'click': function () { self.checkAll(this); }
                             }
                         }).inject(th);
                         self.addEvent('load', function () {
@@ -372,11 +392,10 @@
 
         createData: function (json) {
             var body = this.table.getElement('tbody');
-            var row_len = this.css.rows.length;
             if (json.status == 1) {
                 body.empty();
                 json.data.each(function (item, index) {
-                    var tr = this.createBody(item, index % row_len);
+                    var tr = this.createBody(item);
                     body.grab(tr);
                 }.bind(this));
                 if (this.page)
@@ -386,13 +405,6 @@
                         'index': json.index,
                         'size': json.size
                     });
-
-                /*
-                if (this.options.pagination.size >= json.total)
-                    this.table.getElement('tfoot').addClass(this.css.singlePage);
-                else
-                    this.table.getElement('tfoot').removeClass(this.css.singlePage);
-                */
 
                 this.fireEvent('load', [body.getElements('tr'), json.data]);
             } else {

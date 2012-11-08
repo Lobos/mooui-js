@@ -254,6 +254,8 @@ MooUI.Select.Multiple = new Class({
             self.box.grab(lnk);
             self.links[item.value] = lnk;
         });
+
+        this.fireEvent('load');
     },
     checkItem: function (el, item, lazy) {
         el.addClass(this.options.styleClass.checked);

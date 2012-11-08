@@ -17,7 +17,9 @@
             index: 1,
             total: 0,
             capacity: 10,
-            showCount: false
+            showCount: false,
+            showGo: false,
+            cssGo: 'form-inline input-append'
         },
         initialize: function (container, options) {
             this.setOptions(options);
@@ -78,6 +80,23 @@
                 }).inject(ul);
             }
 
+            if (this.options.showGo) {
+                var go,
+                    form = new Element('form', {
+                    'class': this.options.cssGo,
+                    events: {
+                        submit: function (event) {
+                            event.preventDefault();
+                            self.pageChange(go.get('value').toInt());
+                        }
+                    }
+                }).inject(this.container);
+                go = new Element('input', { type: 'text' }).inject(form);
+                new Element('button', {
+                    'html': 'Go',
+                    'class': 'btn'
+                }).inject(form);
+            }
 
             if (this.options.showCount) {
                 var maxCount = this.options.index * this.options.size;
