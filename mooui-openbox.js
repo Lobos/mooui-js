@@ -4,24 +4,25 @@
  */
 
 (function() {
-var OpenBox = window.OpenBox = new Class({
+if (!this.MooUI) this.MooUI = {};
+MooUI.Openbox = new Class({
     Implements: [Options, Events],
 
     options: {
         id: null,
-        baseClass: 'openbox',
         title: '',
         content: '',
-        tableBox: false,
         icon: '',
         pad: 100,
         width: 'auto',
         height: 'auto',
         opacity: 1,
-        overlayOpacity: 0.5,
+        overlayOpacity: 0.1,
         closeOnOverlayClick: true,
+        arise: false,
+        fixed: false,
+        overlayAll: false,
         destroyOnClose: true,
-        constrain: false,
         showTitle: 1, // 1:show 0:hide -1:none
         showClose: true,
         dragAble: false,
@@ -34,14 +35,20 @@ var OpenBox = window.OpenBox = new Class({
         buttons: [],
         offsetTop: 10,
         fadeDelay: 400,
-        fadeDuration: 200/*,
-        onLock: null
-        */
+        fadeDuration: 200,
+        css: {
+            openbox: 'openbox',
+            close: 'm-icon-close m-icon-huge',
+            title: 'openbox-title',
+            footer: 'openbox-footer',
+            content: 'openbox-content'
+        }
     },
 
     initialize: function (options) {
         this.id = options.id = options.id || String.uniqueID();
         this.setOptions(options);
+        this.css = this.options.css;
         this.createBox();
     },
 
@@ -59,76 +66,38 @@ var OpenBox = window.OpenBox = new Class({
 
         var self = this;
         var container = document.id(this.options.container) || document.body;
-        if (this.options.tableBox) {
-            this.box = new Element('table', {
-                'class': this.options.baseClass,
-                cellSpacing: 0,
-                cellPadding: 0,
-                styles: {
-                    'position': 'absolute',
-                    'container': 'main',
-                    'display': 'none',
-                    'left': -9999,
-                    'top': -9999
-                }
-            }).inject(container);
 
-            var verts = ['top', 'center', 'bottom'], hors = ['left', 'center', 'right'], len = verts.length;
-            verts.each(function (vert, v) {
-                var row = new Element('tr').inject(self.box);
-                hors.each(function (hor, h) {
-                    var cell = new Element('td', {
-                        'class': vert + '-' + hor
-                    }).inject(row);
-                    if (vert == 'center' && hor == 'center') {
-                        self.centerBox = new Element('div', {
-                            'class': self.options.baseClass + '-center',
-                            styles: {
-                                width: self.options.width
-                            }
-                        }).inject(cell);
-                    } else {
-                        cell.setStyle('opacity', 0.4);
-                    }
-                });
-            });
-        } else {
-            this.box = new Element('div', {
-                'class': this.options.baseClass,
-                styles: {
-                    'position': 'absolute',
-                    'display': 'none',
-                    'width': this.options.width,
-                    'left': -9999,
-                    'top': -9999
-                }
-            }).inject(container);
+        this.box = new Element('div', {
+            'class': this.css.openbox,
+            styles: {
+                'display': 'none',
+                'width': this.options.width,
+                'height': this.options.height,
+                'left': -9999,
+                'top': -9999
+            }
+        }).inject(container);
 
-            /*this.centerBox = new Element('div', {
-                'class': this.options.baseClass + '-center',
-                styles: {
-                    width: this.options.width
-                }
-            }).inject(this.box);*/
-            this.centerBox = this.box;
-        }
+        if (this.options.fixed)
+            this.box.setStyle('position', 'fixed');
 
-        this.box.addEvent('mousedown', this.arise.bind(this));
+        if (this.options.arise)
+            this.box.addEvent('mousedown', this.arise.bind(this));
 
         //titlebar
         this.titleBar = new Element('div', {
-            'class': 'title-bar'
-        }).inject(this.centerBox);
+            'class': this.css.title
+        }).inject(this.box);
 
-        new Element('span', {
+        new Element('h3', {
             'html': this.options.title || ''
         }).inject(this.titleBar);
 
         //close button
         if (this.options.showClose) {
             new Element('a', {
-                'class': 'button close',
-                'html': '',
+                'class': this.css.close,
+                'href': 'javascript:;',
                 'events': {
                     'click': function () {
                         self.close();
@@ -142,7 +111,7 @@ var OpenBox = window.OpenBox = new Class({
             var windowSize = window.getSize();
             var handle = new Element('div', {
                 'class': 'handle'
-            }).inject(this.centerBox);
+            }).inject(this.box);
             this.boxDrag = new Drag(this.box, {
                 handle: handle,
                 limit: { x: [0, windowSize.x - 50], y: [0, windowSize.y - 80] }
@@ -170,7 +139,7 @@ var OpenBox = window.OpenBox = new Class({
 
         if (this.options.showTitle == 0) {
             this.titleBar.addClass('hidden');
-            this.centerBox.addEvents({
+            this.box.addEvents({
                 mouseover: function () {
                     this.titleBar.removeClass('hidden');
                 }.bind(this),
@@ -186,13 +155,13 @@ var OpenBox = window.OpenBox = new Class({
 
         //content
         this.contentBox = new Element('div', {
-            'class': this.options.baseClass + '-content'
-        }).inject(this.centerBox);
+            'class': this.css.content
+        }).inject(this.box);
         this.contentBox.store('openbox', this);
 
         if (this.options.resizeAble) {
             this.contentResize = this.contentBox.makeResizable();
-            this.centerResize = this.centerBox.makeResizable({
+            this.centerResize = this.box.makeResizable({
                 handle: this.contentBox
             });
         }
@@ -211,8 +180,8 @@ var OpenBox = window.OpenBox = new Class({
         this.buttons = [];
         if (this.options.buttons.length) {
             this.footer = new Element('div', {
-                'class': this.options.baseClass + '-footer'
-            }).inject(this.centerBox);
+                'class': this.css.footer
+            }).inject(this.box);
 
             this.options.buttons.each(function (button) {
                 this.addButton(button.title, button.event, button.color);
@@ -225,31 +194,14 @@ var OpenBox = window.OpenBox = new Class({
     },
 
     addButton: function (title, clickEvent, color) {
-        this.footer.setStyle('display', 'block');
-        var focusClass = 'focus-' + color;
-        var label = new Element('label', {
-            'class': color || '',
-            events: {
-                mousedown: function () {
-                    if (color) {
-                        label.addClass(focusClass);
-                        var ev = function () {
-                            label.removeClass(focusClass);
-                            document.id(document.body).removeEvent('mouseup', ev);
-                        };
-                        document.id(document.body).addEvent('mouseup', ev);
-                    }
-                }
-            }
-        });
-        this.buttons[title] = (new Element('input', {
-            type: 'button',
-            value: title,
+        this.footer.show();
+        this.buttons[title] = (new Element('button', {
+            'class': 'btn btn-' + color,
+            html: title,
             events: {
                 click: (clickEvent || this.close).bind(this)
             }
-        }).inject(label));
-        label.inject(this.footer);
+        }).inject(this.footer));
         return this;
     },
     showButton: function (title) {
@@ -259,13 +211,6 @@ var OpenBox = window.OpenBox = new Class({
     hideButton: function (title) {
         if (this.buttons[title]) this.buttons[title].addClass('hiddenButton');
         return this.buttons[title];
-    },
-
-    createResizeHandle: function (v, h) {
-        var handle = new Element('div', {
-            'class': 'resize-handle'
-        });
-        return handle;
     },
 
     lock: function () {
@@ -332,7 +277,7 @@ var OpenBox = window.OpenBox = new Class({
 
     fade: function (opts) {
         if (this.options.overlayAll)
-            this.centerBox.mask(opts);
+            this.box.mask(opts);
         else
             this.contentBox.mask(opts);
         this.fireEvent('fade');
@@ -341,7 +286,7 @@ var OpenBox = window.OpenBox = new Class({
 
     unfade: function () {
         if (this.options.overlayAll)
-            this.centerBox.unmask();
+            this.box.unmask();
         else
             this.contentBox.unmask();
         this.fireEvent('unfade');
@@ -362,30 +307,32 @@ var OpenBox = window.OpenBox = new Class({
     },
 
     _position: function () {
-        var left, top;
         if (this.options.position) {
-            left = this.options.position.left;
-            top = this.options.position.top;
+            this.box.setStyles(this.options.position);
         } else {
-            var windowSize = window.getSize(),
+            var left,
+                top,
+                windowSize = window.getSize(),
                 scrollSize = window.getScroll(),
                 boxSize = this.box.getSize();
-            left = scrollSize.x + ((windowSize.x - boxSize.x) / 2);
-            top = scrollSize.y + ((windowSize.y - boxSize.y) / 2) - this.options.offsetTop;
-        }
 
-        this.box.setStyles({
-            left: left,
-            top: top
-        });
+            left = ((windowSize.x - boxSize.x) / 2);
+            top = ((windowSize.y - boxSize.y) / 2) - this.options.offsetTop;
+            if (this.options.fixed) {
+                left += scrollSize.x;
+                top += scrollSize.y;
+            }
+
+            this.box.setStyles({ left: left, top: top });
+        }
 
         return this;
     }
 
 });
 
-OpenBox.Request = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.Request = new Class({
+    Extends: MooUI.Openbox,
 
     options: {
         resizeOnOpen: true,
@@ -415,8 +362,8 @@ OpenBox.Request = new Class({
     }
 });
 
-OpenBox.Image = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.Image = new Class({
+    Extends: MooUI.Openbox,
     options: {
         images: [],
         showTitle: -1,
@@ -498,8 +445,8 @@ OpenBox.Image = new Class({
 	}
 });
 
-OpenBox.IFrame = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.IFrame = new Class({
+    Extends: MooUI.Openbox,
 
     options: {
         url: '',
@@ -586,8 +533,8 @@ OpenBox.IFrame = new Class({
 
 });
 
-OpenBox.Alert = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.Alert = new Class({
+    Extends: MooUI.Openbox,
 
     options: {
         title: 'Warning',
@@ -615,8 +562,8 @@ OpenBox.Alert = new Class({
     }
 });
 
-OpenBox.Confirm = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.Confirm = new Class({
+    Extends: MooUI.Openbox,
 
     options: {
         overlayOpacity: 0.1,
@@ -641,8 +588,8 @@ OpenBox.Confirm = new Class({
     
 });
 
-OpenBox.Wait = new Class({
-    Extends: OpenBox,
+MooUI.Openbox.Wait = new Class({
+    Extends: MooUI.Openbox,
 
     options: {
         showTitle: -1
@@ -661,5 +608,4 @@ OpenBox.Wait = new Class({
     }
 });
 
-//OpenBox.Tip = new Class({});
 })();

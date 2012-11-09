@@ -38,7 +38,7 @@
                 tdTrue: 'icon-ok',
                 tdFalse: 'icon-remove',
 
-                pagination: 'pagination'
+                pagination: 'pagination pagination-small'
             }
         },
 
@@ -59,12 +59,12 @@
             }
 
             if (this.options.filterAble)
-                this.createFilter();
+                this._createFilter();
 
             return this;
         },
 
-        createFilter: function () {
+        _createFilter: function () {
             var self = this;
 
             if (!this.table.getElement('caption'))
@@ -79,7 +79,7 @@
             var header = this.options.header || [];
             header.each(function (h) {
                 if (!h.filter) return;
-                self.filterBox.grab(self.getFilterItem(h));
+                self.filterBox.grab(self._getFilterItem(h));
             });
 
             new Element('button', {
@@ -107,7 +107,7 @@
 
         },
 
-        getFilterItem: function (h) {
+        _getFilterItem: function (h) {
             var el = new Element('label', { 'html': h.name + ': ', 'class': 'wrap' });
             switch (h.filter.type) {
                 case 'input':
@@ -177,6 +177,7 @@
 
             this.setFilter(data);
             this.load();
+            return this;
         },
 
         showFilter: function () {
@@ -249,10 +250,12 @@
                     case 'checkbox':
                         th.addClass(self.css.checkbox);
                         if (!h.style || !h.styles.width) th.setStyle('width', 14);
-                        var cbk = new Element('a', {
+                        var cbk = self.checkAllHandle = new Element('a', {
                             'href': 'javascript:;',
                             'events': {
-                                'click': function () { self.checkAll(this); }
+                                'click': function () {
+                                    self.checkAll(!this.hasClass(self.css.checked));
+                                }
                             }
                         }).inject(th);
                         self.addEvent('load', function () {
@@ -325,15 +328,16 @@
             return tr;
         },
 
-        checkAll: function (el) {
-            el.toggleClass(this.css.checked);
-            if (el.hasClass(this.css.checked)) {
+        checkAll: function (b) {
+            if (b) {
+                this.checkAllHandle.addClass(this.css.checked);
                 this.table.getElements('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
-                this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             } else {
+                this.checkAllHandle.removeClass(this.css.checked);
                 this.table.getElements('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
-                this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             }
+            this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
+            return this;
         },
 
         getChecked: function () {
