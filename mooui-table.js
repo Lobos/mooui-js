@@ -48,7 +48,6 @@
             this.table = document.id(table);
             this.createHeader();
             this.request = this.options.request || {};
-            this.filterItems = [];
 
             if (this.options.pageAble) {
                 this.createFooter();
@@ -68,9 +67,11 @@
         createFilter: function () {
             var self = this;
 
-            this.filterBox = new Element('div', {
-                'class': this.css.filterBox
-            }).inject(this.table, 'before');
+            if (!this.table.getElement('caption'))
+                new Element('caption', {
+                    'class': this.css.filterBox
+                }).inject(this.table, 'top');
+            this.filterBox = this.table.getElement('caption');
 
             if (this.options.filterHide)
                 this.filterBox.hide();
@@ -157,7 +158,6 @@
                                 [{ value:1, text: Locale.get('MooUI_Table.True') }, { value:0, text: Locale.get('MooUI_Table.False') }]
                         });
 
-                    this.filterItems.push(select);
                     this.addEvent('filterClear', function () {
                         select.clearValue();
                     });
@@ -281,11 +281,10 @@
             this.page.addEvent('pageChange', this.pageChange.bind(this));
         },
 
-        createBody: function (item, index) {
+        createBody: function (item) {
             var self = this;
             var header = this.options.header || [];
             var tr = new Element('tr', {
-                //'class': self.css.rows[index],
                 'events': {
                     'mouseover': function () {
                         this.getElements('td').addClass('highlight');
@@ -437,11 +436,6 @@
 
         destroy: function () {
             this.table.destroy();
-            this.filterItems.each(function (item) {
-                Function.attempt(function () {
-                    item.destroy();
-                });
-            });
         }
     });
 })();

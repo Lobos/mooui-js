@@ -6,7 +6,8 @@
 (function () {
     /* ============= locale ======================*/
     Locale.define('zh-CHS', 'Pager', {
-        count: '共: {total} 条&nbsp; 当前: {start} - {max}'
+        count: '共: {total} 条&nbsp; 当前: {start} - {max}',
+        go: 'GO'
     });
 
     if (!this.MooUI) this.MooUI = {};
@@ -93,7 +94,7 @@
                 }).inject(this.container);
                 go = new Element('input', { type: 'text' }).inject(form);
                 new Element('button', {
-                    'html': 'Go',
+                    'html': Locale.get('Pager.go'),
                     'class': 'btn'
                 }).inject(form);
             }
