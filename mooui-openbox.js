@@ -20,7 +20,7 @@ MooUI.Openbox = new Class({
         overlayOpacity: 0.1,
         closeOnOverlayClick: true,
         arise: false,
-        fixed: false,
+        fixed: true,
         overlayAll: false,
         destroyOnClose: true,
         showTitle: 1, // 1:show 0:hide -1:none
@@ -38,10 +38,12 @@ MooUI.Openbox = new Class({
         fadeDuration: 200,
         css: {
             openbox: 'openbox',
+            inner: 'openbox-inner',
             close: 'm-icon-close m-icon-huge',
             title: 'openbox-title',
+            handle: 'openbox-handle',
             footer: 'openbox-footer',
-            content: 'openbox-content'
+            content: 'openbox-body'
         }
     },
 
@@ -50,6 +52,18 @@ MooUI.Openbox = new Class({
         this.setOptions(options);
         this.css = this.options.css;
         this.createBox();
+        this.tween = new Fx.Tween(this.box, {
+            duration: this.options.fadeDuration,
+            link: 'cancel',
+            property: 'opacity',
+            onStart: function () {
+                this.box.setStyle('visibility', 'visible');
+            }.bind(this),
+            onComplete: function () {
+                if (this.box.getStyle('opacity') == 0)
+                    this.box.setStyle('visibility', 'hidden');
+            }.bind(this)
+        });
     },
 
     createBox: function () {
@@ -70,13 +84,17 @@ MooUI.Openbox = new Class({
         this.box = new Element('div', {
             'class': this.css.openbox,
             styles: {
-                'display': 'none',
                 'width': this.options.width,
                 'height': this.options.height,
+                'opacity': 0,
                 'left': -9999,
                 'top': -9999
             }
         }).inject(container);
+
+        this.innerBox = new Element('div', {
+            'class': this.css.inner
+        }).inject(this.box);
 
         if (this.options.fixed)
             this.box.setStyle('position', 'fixed');
@@ -87,7 +105,7 @@ MooUI.Openbox = new Class({
         //titlebar
         this.titleBar = new Element('div', {
             'class': this.css.title
-        }).inject(this.box);
+        }).inject(this.innerBox);
 
         new Element('h3', {
             'html': this.options.title || ''
@@ -106,17 +124,18 @@ MooUI.Openbox = new Class({
             }).inject(this.titleBar);
         }
 
-        //lock button
+        //drag
         if (this.options.dragAble || this.options.resizeAble) {
             var windowSize = window.getSize();
             var handle = new Element('div', {
-                'class': 'handle'
+                'class': this.css.handle
             }).inject(this.box);
             this.boxDrag = new Drag(this.box, {
                 handle: handle,
                 limit: { x: [0, windowSize.x - 50], y: [0, windowSize.y - 80] }
             });
 
+            /*
             if (this.options.showLock) {
                 this.isLocked = true;
                 this.boxDrag.detach();
@@ -135,6 +154,7 @@ MooUI.Openbox = new Class({
                     }
                 }).inject(this.titleBar);
             }
+            */
         }
 
         if (this.options.showTitle == 0) {
@@ -156,7 +176,7 @@ MooUI.Openbox = new Class({
         //content
         this.contentBox = new Element('div', {
             'class': this.css.content
-        }).inject(this.box);
+        }).inject(this.innerBox);
         this.contentBox.store('openbox', this);
 
         if (this.options.resizeAble) {
@@ -181,7 +201,7 @@ MooUI.Openbox = new Class({
         if (this.options.buttons.length) {
             this.footer = new Element('div', {
                 'class': this.css.footer
-            }).inject(this.box);
+            }).inject(this.innerBox);
 
             this.options.buttons.each(function (button) {
                 this.addButton(button.title, button.event, button.color);
@@ -242,11 +262,11 @@ MooUI.Openbox = new Class({
         if (this.isOpen) return this;
         if (this.overlay) this.overlay.open();
         this.box.setStyles({
-            'z-index': Object.topZIndex(),
-            'display': 'block'
+            'z-index': Object.topZIndex()
         });
 
         if (this.options.resizeOnOpen) this._resize();
+        this.tween.start(1);
         this.isOpen = true;
 
         return this;
@@ -256,7 +276,7 @@ MooUI.Openbox = new Class({
         if (!this.isOpen) return this;
 
         this.isOpen = false;
-        this.box.setStyle('display', 'none');
+        this.tween.start(0);
         if (this.overlay) this.overlay.close();
 
         if (this.options.destroyOnClose)
@@ -264,6 +284,10 @@ MooUI.Openbox = new Class({
 
         this.fireEvent('close', data);
         return this;
+    },
+
+    changeTitle: function (title) {
+        this.titleBar.getElement('h3').set('html', title);
     },
 
     destroy: function () {
@@ -318,7 +342,7 @@ MooUI.Openbox = new Class({
 
             left = ((windowSize.x - boxSize.x) / 2);
             top = ((windowSize.y - boxSize.y) / 2) - this.options.offsetTop;
-            if (this.options.fixed) {
+            if (!this.options.fixed) {
                 left += scrollSize.x;
                 top += scrollSize.y;
             }
@@ -341,23 +365,31 @@ MooUI.Openbox.Request = new Class({
 
     initialize: function (options) {
         this.parent(options);
-        if (this.options.request) {
-            this.contentBox.addClass('loading');
-            this._position();
-            var opts = {
-                update: this.contentBox,
-                onSuccess: function () {
-                    this.contentBox.removeClass('loading');
-                    this._position();
-                }.bind(this)
-            };
-            Object.merge(opts, this.options.request);
-            new Request.HTML(opts).send();
-        }
+        this.isLoaded = false;
     },
 
-    loading: function () {
-        this.fade({'class': 'mask-loading'});
+    open: function () {
+        this.parent();
+        if (!this.isLoaded)
+            this.load();
+    },
+
+    load: function (options) {
+        this.contentBox.addClass('loading');
+        this._position();
+
+        var opts = {
+            update: this.contentBox,
+            onSuccess: function () {
+                this.contentBox.removeClass('loading');
+                this._position();
+            }.bind(this)
+        };
+        options = Object.merge(this.options.request || {}, options);
+        Object.merge(opts, options);
+        new Request.HTML(opts).send();
+        this.isLoaded = true;
+
         return this;
     }
 });

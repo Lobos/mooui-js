@@ -1,20 +1,20 @@
 /*
----
+ ---
 
-name: Overlay
+ name: Overlay
 
-authors:
-  - David Walsh (http://davidwalsh.name)
+ authors:
+ - David Walsh (http://davidwalsh.name)
 
-license:
-  - MIT-style license
+ license:
+ - MIT-style license
 
-requires: [Core/Class, Core/Element.Style, Core/Element.Event, Core/Element.Dimensions, Core/Fx.Tween]
+ requires: [Core/Class, Core/Element.Style, Core/Element.Event, Core/Element.Dimensions, Core/Fx.Tween]
 
-provides:
-  - Overlay
-...
-*/
+ provides:
+ - Overlay
+ ...
+ */
 
 var Overlay = new Class({
 
@@ -24,18 +24,17 @@ var Overlay = new Class({
         id: 'overlay',
         color: '#000',
         duration: 500,
-        teen: false,
-        opacity: 0.1/*,
-		zIndex: 5000,
-		onClick: $empty,
-		onClose: $empty,
-		onHide: $empty,
-		onOpen: $empty,
-		onShow: $empty
-		*/
+        opacity: 0.5,
+        zIndex: 5000/*,
+         onClick: function(){},
+         onClose: function(){},
+         onHide: function(){},
+         onOpen: function(){},
+         onShow: function(){}
+         */
     },
 
-    initialize: function (container, options) {
+    initialize: function(container, options){
         this.setOptions(options);
         this.container = document.id(container);
 
@@ -52,108 +51,93 @@ var Overlay = new Class({
         this.build().attach();
     },
 
-    build: function () {
+    build: function(){
         this.overlay = new Element('div', {
             id: this.options.id,
-            opacity: this.options.teen ? 0 : this.options.opacity,
             styles: {
                 position: (Browser.ie6) ? 'absolute' : 'fixed',
                 background: this.options.color,
                 left: 0,
-                top: 0
+                top: 0,
+                'z-index': this.options.zIndex,
+                opacity: 0
             }
         }).inject(this.container);
-        if (this.options.teen)
-            this.tween = new Fx.Tween(this.overlay, {
-                duration: this.options.duration,
-                link: 'cancel',
-                property: 'opacity'
-            });
+        this.tween = new Fx.Tween(this.overlay, {
+            duration: this.options.duration,
+            link: 'cancel',
+            property: 'opacity'
+        });
         return this;
-    } .protect(),
+    }.protect(),
 
-    attach: function () {
+    attach: function(){
         window.addEvents(this.bound.window);
         this.overlay.addEvent('click', this.bound.overlayClick);
-        if (this.teen)
-            this.tween.addEvents({
-                onStart: this.bound.tweenStart,
-                onComplete: this.bound.tweenComplete
-            });
-        return this;
-    },
-
-    detach: function () {
-        var args = Array.prototype.slice.call(arguments);
-        args.each(function (item) {
-            if (item == 'window') window.removeEvents(this.bound.window);
-            if (item == 'overlay') this.overlay.removeEvent('click', this.bound.overlayClick);
-        }, this);
-        return this;
-    },
-
-    overlayClick: function () {
-        this.fireEvent('click');
-        return this;
-    },
-
-    tweenStart: function () {
-        this.overlay.setStyles({
-            width: '100%',
-            height: this.container.getScrollSize().y
+        this.tween.addEvents({
+            onStart: this.bound.tweenStart,
+            onComplete: this.bound.tweenComplete
         });
         return this;
     },
 
-    tweenComplete: function () {
-        this.fireEvent(this.overlay.get('opacity') == this.options.opacity ? 'show' : 'hide');
+    detach: function(){
+        var args = Array.prototype.slice.call(arguments);
+        args.each(function(item){
+            if(item == 'window') window.removeEvents(this.bound.window);
+            if(item == 'overlay') this.overlay.removeEvent('click', this.bound.overlayClick);
+        }, this);
         return this;
     },
 
-    open: function (zIndex) {
-        zIndex = zIndex || Object.topZIndex();
-        document.id(this.overlay).setStyle('z-index', zIndex);
+    overlayClick: function(){
+        this.fireEvent('click');
+        return this;
+    },
+
+    tweenStart: function(){
+        this.overlay.setStyles({
+            width: '100%',
+            height: this.container.getScrollSize().y,
+            visibility: 'visible'
+        });
+        return this;
+    },
+
+    tweenComplete: function(){
+        var event = this.overlay.getStyle('opacity') == this.options.opacity ? 'show' : 'hide';
+        if (event == 'hide') this.overlay.setStyle('visibility', 'hidden');
+        return this;
+    },
+
+    open: function(){
         this.fireEvent('open');
-        if (this.options.teen)
-            this.tween.start(this.options.opacity);
-        else
-            this.overlay.setStyles({
-                display: 'block',
-                width: '100%',
-                height: this.container.getScrollSize().y
-            });
+        this.tween.start(this.options.opacity);
         return this;
     },
 
-    close: function () {
+    close: function(){
         this.fireEvent('close');
-        if (this.options.teen)
-            this.tween.start(0);
-        else
-            this.overlay.setStyle('display', 'none');
+        this.tween.start(0);
+        return this;
+    },
+
+    resize: function(){
+        this.fireEvent('resize');
+        this.overlay.setStyle('height', this.container.getScrollSize().y);
+        return this;
+    },
+
+    scroll: function(){
+        this.fireEvent('scroll');
+        if (Browser.ie6) this.overlay.setStyle('left', window.getScroll().x);
         return this;
     },
 
     destroy: function () {
         this.detach();
         this.overlay.destroy();
-        delete this.overlay;
-        Function.attempt(function () {
-            CollectGarbage();
-        });
-    },
-
-    resize: function () {
-        this.fireEvent('resize');
-        if (this.overlay)
-            document.id(this.overlay).setStyle('height', this.container.getScrollSize().y);
-        return this;
-    },
-
-    scroll: function () {
-        this.fireEvent('scroll');
-        if (Browser.ie6) document.id(this.overlay).setStyle('left', window.getScroll().x);
-        return this;
     }
 
 });
+
