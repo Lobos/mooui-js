@@ -8,4 +8,10 @@
     this.MooUI = this.MooUI || {
         version: 1.0
     };
+
+    MooUI.Global = new new Class({
+        initialize: function () {
+            this.pages = {};
+        }
+    });
 })();

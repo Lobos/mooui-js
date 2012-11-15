@@ -21,9 +21,9 @@ MooUI.Openbox = new Class({
         closeOnOverlayClick: true,
         arise: false,
         fixed: true,
-        overlayAll: false,
+        maskAll: false,
         destroyOnClose: true,
-        showTitle: 1, // 1:show 0:hide -1:none
+        showTitle: true,
         showClose: true,
         dragAble: false,
         resizeAble: false,
@@ -33,17 +33,18 @@ MooUI.Openbox = new Class({
         resetOnScroll: true,
         position: null,
         buttons: [],
-        offsetTop: 10,
         fadeDelay: 400,
         fadeDuration: 200,
         css: {
-            openbox: 'openbox',
-            inner: 'openbox-inner',
-            close: 'm-icon-close m-icon-huge',
-            title: 'openbox-title',
-            handle: 'openbox-handle',
-            footer: 'openbox-footer',
-            content: 'openbox-body'
+            openbox:    'openbox',
+            inner:      'openbox-inner',
+            title:      'openbox-title',
+            drag:       'openbox-drag',
+            resize:     'openbox-resize',
+            close:      'openbox-close m-icon-close m-icon-huge',
+            body:       'openbox-body',
+            content:    'openbox-content',
+            buttons:    'openbox-buttons'
         }
     },
 
@@ -84,8 +85,6 @@ MooUI.Openbox = new Class({
         this.box = new Element('div', {
             'class': this.css.openbox,
             styles: {
-                'width': this.options.width,
-                'height': this.options.height,
                 'opacity': 0,
                 'left': -9999,
                 'top': -9999
@@ -102,14 +101,30 @@ MooUI.Openbox = new Class({
         if (this.options.arise)
             this.box.addEvent('mousedown', this.arise.bind(this));
 
-        //titlebar
-        this.titleBar = new Element('div', {
-            'class': this.css.title
-        }).inject(this.innerBox);
+        //title bar
+        if (this.options.showTitle)
+            this.createTitle();
 
-        new Element('h3', {
-            'html': this.options.title || ''
-        }).inject(this.titleBar);
+        //content
+        this.contentBox = new Element('div', {
+            'class': this.css.body,
+            'styles': {
+                'width': this.options.width,
+                'height': this.options.height
+            }
+        }).inject(this.innerBox);
+        this.contentBox.store('openbox', this);
+
+        if (this.options.resizeAble) {
+            this.resizeHandle = new Element('div', {
+                'class': this.css.resize
+            }).inject(this.innerBox);
+            this.contentResize = this.contentBox.makeResizable({
+                handle: this.resizeHandle
+            });
+        }
+
+        this.set('content', this.options.content);
 
         //close button
         if (this.options.showClose) {
@@ -121,91 +136,39 @@ MooUI.Openbox = new Class({
                         self.close();
                     }
                 }
-            }).inject(this.titleBar);
-        }
-
-        //drag
-        if (this.options.dragAble || this.options.resizeAble) {
-            var windowSize = window.getSize();
-            var handle = new Element('div', {
-                'class': this.css.handle
-            }).inject(this.box);
-            this.boxDrag = new Drag(this.box, {
-                handle: handle,
-                limit: { x: [0, windowSize.x - 50], y: [0, windowSize.y - 80] }
-            });
-
-            /*
-            if (this.options.showLock) {
-                this.isLocked = true;
-                this.boxDrag.detach();
-                var lock_button = new Element('a', {
-                    'class': this.options.baseClass + '-lock',
-                    'events': {
-                        'click': function () {
-                            if (this.isLocked) {
-                                this.unlock();
-                                lock_button.addClass('unlock');
-                            } else {
-                                this.lock();
-                                lock_button.removeClass('unlock');
-                            }
-                        }.bind(this)
-                    }
-                }).inject(this.titleBar);
-            }
-            */
-        }
-
-        if (this.options.showTitle == 0) {
-            this.titleBar.addClass('hidden');
-            this.box.addEvents({
-                mouseover: function () {
-                    this.titleBar.removeClass('hidden');
-                }.bind(this),
-                mouseout: function () {
-                    this.titleBar.addClass('hidden');
-                }.bind(this)
-            });
-        } else if (this.options.showTitle == -1) {
-            this.titleBar.setStyle('display', 'none');
-        }
-
-        //minimize button
-
-        //content
-        this.contentBox = new Element('div', {
-            'class': this.css.content
-        }).inject(this.innerBox);
-        this.contentBox.store('openbox', this);
-
-        if (this.options.resizeAble) {
-            this.contentResize = this.contentBox.makeResizable();
-            this.centerResize = this.box.makeResizable({
-                handle: this.contentBox
-            });
-        }
-
-        switch (typeOf(this.options.content)) {
-            case 'element':
-                this.contentBox.grab(this.options.content);
-                break;
-            case 'string':
-            case 'number':
-                this.contentBox.set('html', this.options.content);
-                break;
+            }).inject(this.innerBox);
         }
 
         //create footer buttons
         this.buttons = [];
         if (this.options.buttons.length) {
             this.footer = new Element('div', {
-                'class': this.css.footer
+                'class': this.css.buttons
             }).inject(this.innerBox);
 
             this.options.buttons.each(function (button) {
                 this.addButton(button.title, button.event, button.color);
             }, this);
+        }
+    },
+
+    createTitle: function () {
+        var titleBar = this.titleBar = new Element('div', {
+            'class': this.css.title
+        }).inject(this.innerBox);
+
+        new Element('h3', {
+            'html': this.options.title || ''
+        }).inject(titleBar);
+
+        //drag
+        if (this.options.dragAble) {
+            var windowSize = window.getSize();
+            titleBar.addClass(this.css.drag);
+            this.boxDrag = new Drag(this.box, {
+                handle: titleBar,
+                limit: { x: [0, windowSize.x - 50], y: [0, windowSize.y - 80] }
+            });
         }
     },
 
@@ -237,36 +200,36 @@ MooUI.Openbox = new Class({
         if (this.isLocked) return this;
         this.boxDrag.detach();
         if (this.contentResize) this.contentResize.detach();
-        if (this.centerResize) this.centerResize.detach();
         this.fireEvent('lock', this);
-        this.titleBar.removeClass('move');
-        this.contentBox.removeClass('resize');
+        this.titleBar.removeClass(this.css.drag);
+        this.resizeHandle.hide();
         this.isLocked = true;
+
+        return this;
     },
 
     unlock: function () {
         if (!this.isLocked) return this;
         this.boxDrag.attach();
         if (this.contentResize) this.contentResize.attach();
-        if (this.centerResize) this.centerResize.attach();
-        if (this.options.dragAble) this.titleBar.addClass('move');
-        if (this.options.resizeAble) this.contentBox.addClass('resize');
+        if (this.options.dragAble) this.titleBar.addClass(this.css.drag);
+        this.resizeHandle.show();
         this.isLocked = false;
+
+        return this;
     },
 
     arise: function () {
         this.box.setStyle('z-index', Object.topZIndex());
     },
 
-    open: function (fast) {
+    open: function (opacity) {
         if (this.isOpen) return this;
         if (this.overlay) this.overlay.open();
-        this.box.setStyles({
-            'z-index': Object.topZIndex()
-        });
-
         if (this.options.resizeOnOpen) this._resize();
-        this.tween.start(1);
+        this.arise();
+        opacity = opacity || 1;
+        this.tween.start(opacity);
         this.isOpen = true;
 
         return this;
@@ -286,31 +249,50 @@ MooUI.Openbox = new Class({
         return this;
     },
 
-    changeTitle: function (title) {
-        this.titleBar.getElement('h3').set('html', title);
+    set: function (property, content) {
+        switch (property) {
+            case 'title':
+                this.titleBar.getElement('h3').set('html', content);
+                break;
+            case 'content':
+                this.contentBox.empty();
+                switch (typeOf(content)) {
+                    case 'element':
+                        this.contentBox.grab(this.options.content);
+                        break;
+                    case 'string':
+                    case 'number':
+                        new Element('div', {
+                            'class': this.css.content,
+                            html: this.options.content
+                        }).inject(this.contentBox);
+                        break;
+                }
+                break;
+        }
+
+        return this;
     },
 
     destroy: function () {
         this.box.dispose();
         this.box.destroy();
-        delete this.box;
-        if (Browser.ie) CollectGarbage();
 
         if (this.overlay) this.overlay.destroy();
     },
 
-    fade: function (opts) {
-        if (this.options.overlayAll)
-            this.box.mask(opts);
+    mask: function (opts) {
+        if (this.options.maskAll)
+            this.innerBox.mask(opts);
         else
             this.contentBox.mask(opts);
         this.fireEvent('fade');
         return this;
     },
 
-    unfade: function () {
-        if (this.options.overlayAll)
-            this.box.unmask();
+    unmask: function () {
+        if (this.options.maskAll)
+            this.innerBox.unmask();
         else
             this.contentBox.unmask();
         this.fireEvent('unfade');
@@ -341,7 +323,7 @@ MooUI.Openbox = new Class({
                 boxSize = this.box.getSize();
 
             left = ((windowSize.x - boxSize.x) / 2);
-            top = ((windowSize.y - boxSize.y) / 2) - this.options.offsetTop;
+            top = ((windowSize.y - boxSize.y) / 2);
             if (!this.options.fixed) {
                 left += scrollSize.x;
                 top += scrollSize.y;
@@ -360,6 +342,7 @@ MooUI.Openbox.Request = new Class({
 
     options: {
         resizeOnOpen: true,
+        maskAll: true,
         request: {}
     },
 
@@ -376,20 +359,22 @@ MooUI.Openbox.Request = new Class({
 
     load: function (options) {
         this.contentBox.addClass('loading');
+        this.mask({ 'class': 'mask-loading' });
         this._position();
 
         var opts = {
             update: this.contentBox,
             onSuccess: function () {
-                this.contentBox.removeClass('loading');
-                this._position();
+                this.unmask();
+                this.contentBox.removeClass('loading').fade('hide').fade('in');
+                this._resize();
             }.bind(this)
         };
         options = Object.merge(this.options.request || {}, options);
         Object.merge(opts, options);
         new Request.HTML(opts).send();
-        this.isLoaded = true;
 
+        this.isLoaded = true;
         return this;
     }
 });
@@ -442,7 +427,7 @@ MooUI.Openbox.Image = new Class({
 			height: currentDimensions.y
 		});
 		this._position();
-		this.fade();
+		this.mask();
 		this.image = new Element('img',{
 			events: {
 				load: function() {
@@ -452,7 +437,7 @@ MooUI.Openbox.Image = new Class({
 						setSize();
 						this._resize();
 						setSize(); //stupid ie
-						this.unfade();
+						this.unmask();
 						this.fireEvent('complete');
 					}).bind(this).delay(10);
 				}.bind(this),
