@@ -116,15 +116,17 @@ var Overlay = new Class({
         return this;
     },
 
-    close: function(){
+    close: function(destroy){
         this.fireEvent('close');
-        this.tween.start(0);
+        this.tween.start(0).chain(function () {
+            if (destroy) this.destroy();
+        }.bind(this));
         return this;
     },
 
     resize: function(){
         this.fireEvent('resize');
-        this.overlay.setStyle('height', this.container.getScrollSize().y);
+        document.id(this.overlay).setStyle('height', this.container.getScrollSize().y);
         return this;
     },
 
@@ -138,6 +140,5 @@ var Overlay = new Class({
         this.detach();
         this.overlay.destroy();
     }
-
 });
 

@@ -5,36 +5,35 @@
 
 (function() {
 if (!this.MooUI) this.MooUI = {};
+Locale.define('zh-CHS', 'MooUI_Openbox', {
+    ajaxError: '内容获取失败。'
+});
+
 MooUI.Openbox = new Class({
     Implements: [Options, Events],
 
     options: {
         id: null,
+        container: null,
         title: '',
         content: '',
-        icon: '',
         pad: 100,
         width: 'auto',
         height: 'auto',
         opacity: 1,
         overlayOpacity: 0.1,
         closeOnOverlayClick: true,
+        destroyOnClose: false,
         arise: false,
         fixed: true,
-        maskAll: false,
-        destroyOnClose: true,
+        maskAll: true,
         showTitle: true,
         showClose: true,
         dragAble: false,
         resizeAble: false,
-        showLock: false,
-        minimizeAble: false,
-        resizeOnOpen: true,
-        resetOnScroll: true,
         position: null,
+        duration: 200,
         buttons: [],
-        fadeDelay: 400,
-        fadeDuration: 200,
         css: {
             openbox:    'openbox',
             inner:      'openbox-inner',
@@ -45,7 +44,9 @@ MooUI.Openbox = new Class({
             body:       'openbox-body',
             content:    'openbox-content',
             buttons:    'openbox-buttons'
-        }
+        }/*,
+        onClose: function () {}
+        */
     },
 
     initialize: function (options) {
@@ -54,7 +55,7 @@ MooUI.Openbox = new Class({
         this.css = this.options.css;
         this.createBox();
         this.tween = new Fx.Tween(this.box, {
-            duration: this.options.fadeDuration,
+            duration: this.options.duration,
             link: 'cancel',
             property: 'opacity',
             onStart: function () {
@@ -147,7 +148,7 @@ MooUI.Openbox = new Class({
             }).inject(this.innerBox);
 
             this.options.buttons.each(function (button) {
-                this.addButton(button.title, button.event, button.color);
+                this.addButton(button.text, button.events, button.type);
             }, this);
         }
     },
@@ -176,31 +177,34 @@ MooUI.Openbox = new Class({
         return this.box;
     },
 
-    addButton: function (title, clickEvent, color) {
+    addButton: function (text, events, type) {
         this.footer.show();
-        this.buttons[title] = (new Element('button', {
-            'class': 'btn btn-' + color,
-            html: title,
-            events: {
-                click: (clickEvent || this.close).bind(this)
-            }
+
+        if (!events)
+            events = { click: this.close.bind(this) };
+        else if (typeOf(events) == 'function')
+            events = { click: events };
+
+        this.buttons[text] = (new Element('button', {
+            'class': 'btn btn-' + (type || ''),
+            html: text,
+            events: events
         }).inject(this.footer));
         return this;
     },
-    showButton: function (title) {
-        if (this.buttons[title]) this.buttons[title].removeClass('hiddenButton');
-        return this.buttons[title];
+    showButton: function (text) {
+        if (this.buttons[text]) this.buttons[text].show();
+        return this.buttons[text];
     },
-    hideButton: function (title) {
-        if (this.buttons[title]) this.buttons[title].addClass('hiddenButton');
-        return this.buttons[title];
+    hideButton: function (text) {
+        if (this.buttons[text]) this.buttons[text].hide();
+        return this.buttons[text];
     },
 
     lock: function () {
         if (this.isLocked) return this;
         this.boxDrag.detach();
         if (this.contentResize) this.contentResize.detach();
-        this.fireEvent('lock', this);
         this.titleBar.removeClass(this.css.drag);
         this.resizeHandle.hide();
         this.isLocked = true;
@@ -221,14 +225,15 @@ MooUI.Openbox = new Class({
 
     arise: function () {
         this.box.setStyle('z-index', Object.topZIndex());
+        return this;
     },
 
     open: function (opacity) {
         if (this.isOpen) return this;
         if (this.overlay) this.overlay.open();
-        if (this.options.resizeOnOpen) this._resize();
+        this._resize();
         this.arise();
-        opacity = opacity || 1;
+        opacity = opacity || this.options.opacity;
         this.tween.start(opacity);
         this.isOpen = true;
 
@@ -239,11 +244,12 @@ MooUI.Openbox = new Class({
         if (!this.isOpen) return this;
 
         this.isOpen = false;
-        this.tween.start(0);
-        if (this.overlay) this.overlay.close();
+        this.tween.start(0).chain(function () {
+            if (this.options.destroyOnClose) this.destroy();
+        }.bind(this));
 
-        if (this.options.destroyOnClose)
-            this.destroy();
+        if (this.overlay)
+            this.overlay.close(this.options.destroyOnClose);
 
         this.fireEvent('close', data);
         return this;
@@ -258,13 +264,13 @@ MooUI.Openbox = new Class({
                 this.contentBox.empty();
                 switch (typeOf(content)) {
                     case 'element':
-                        this.contentBox.grab(this.options.content);
+                        this.contentBox.grab(content);
                         break;
                     case 'string':
                     case 'number':
                         new Element('div', {
                             'class': this.css.content,
-                            html: this.options.content
+                            html: content
                         }).inject(this.contentBox);
                         break;
                 }
@@ -278,7 +284,9 @@ MooUI.Openbox = new Class({
         this.box.dispose();
         this.box.destroy();
 
-        if (this.overlay) this.overlay.destroy();
+        Function.attempt(function () {
+            this.overlay.destroy();
+        });
     },
 
     mask: function (opts) {
@@ -286,7 +294,6 @@ MooUI.Openbox = new Class({
             this.innerBox.mask(opts);
         else
             this.contentBox.mask(opts);
-        this.fireEvent('fade');
         return this;
     },
 
@@ -295,7 +302,6 @@ MooUI.Openbox = new Class({
             this.innerBox.unmask();
         else
             this.contentBox.unmask();
-        this.fireEvent('unfade');
         return this;
     },
 
@@ -341,8 +347,8 @@ MooUI.Openbox.Request = new Class({
     Extends: MooUI.Openbox,
 
     options: {
-        resizeOnOpen: true,
         maskAll: true,
+        destroyOnClose: true,
         request: {}
     },
 
@@ -365,9 +371,16 @@ MooUI.Openbox.Request = new Class({
         var opts = {
             update: this.contentBox,
             onSuccess: function () {
-                this.unmask();
                 this.contentBox.removeClass('loading').fade('hide').fade('in');
                 this._resize();
+            }.bind(this),
+            onFailure: function () {
+                this.contentBox.removeClass('loading').fade('hide').fade('in');
+                this.set('content', Locale.get('MooUI_Openbox.ajaxError'));
+                this._resize();
+            }.bind(this),
+            onComplete: function () {
+                this.unmask();
             }.bind(this)
         };
         options = Object.merge(this.options.request || {}, options);
@@ -384,14 +397,12 @@ MooUI.Openbox.Image = new Class({
     options: {
         images: [],
         showTitle: -1,
-        resizeOnOpen: false,
         destroyOnClose: false
     },
 
     initialize: function(options) {
 		this.parent(options);
 		this.url = '';
-		this.resizeOnOpen = false;
 		if(this.options.url) this.load();
 	},
 	_resize: function() {
@@ -467,8 +478,7 @@ MooUI.Openbox.IFrame = new Class({
 
     options: {
         url: '',
-        domain: '*',
-        resizeOnOpen: true/*,
+        domain: '*'/*,
         initData: null,
         callback: null,
         onReceive: null*/
@@ -498,7 +508,7 @@ MooUI.Openbox.IFrame = new Class({
                     //first load is empty
                     if (!self.iframe) return;
 
-                    self.unfade();
+                    self.unmask();
                     self.fireEvent('complete');
 
                     Function.attempt(function () {
@@ -512,7 +522,7 @@ MooUI.Openbox.IFrame = new Class({
     },
 
     load: function (url, title) {
-        this.fade();
+        this.mask();
         this.iframe.src = url || this.options.url;
 
         return this;
@@ -548,81 +558,6 @@ MooUI.Openbox.IFrame = new Class({
         this._position();
     }
 
-});
-
-MooUI.Openbox.Alert = new Class({
-    Extends: MooUI.Openbox,
-
-    options: {
-        title: 'Warning',
-        opacity: 1,
-        overlayOpacity: 0.1,
-        dragAble: false,
-        resizeAble: false,
-        resizeOnOpen: true,
-        showTitle: 1
-    },
-
-    initialize: function (content) {
-        var contentElement = new Element('div', {
-            'html': content,
-            'class': 'warning'
-        });
-        var options = {
-            content: contentElement,
-            buttons: [
-                { 'title': '确定', event: function() { this.close(); } }
-            ]
-        };
-		this.parent(options);
-        this.open();
-    }
-});
-
-MooUI.Openbox.Confirm = new Class({
-    Extends: MooUI.Openbox,
-
-    options: {
-        overlayOpacity: 0.1,
-        title: 'Confirm'
-	},
-
-	initialize: function(content, fn) {
-        var contentElement = new Element('div', {
-            'html': content,
-            'class': 'question'
-        });
-        var options = {
-            content: contentElement,
-            buttons: [
-                { 'title': '确定', event: fn.bind(this), color:'blue' },
-                { 'title': '取消', event: function() { this.close(); } }
-            ]
-        };
-		this.parent(options);
-        this.open();
-	}
-    
-});
-
-MooUI.Openbox.Wait = new Class({
-    Extends: MooUI.Openbox,
-
-    options: {
-        showTitle: -1
-    },
-
-    initialize: function (content) {
-        var contentElement = new Element('div', {
-            'html': content,
-            'class': 'wait'
-        });
-        var options = {
-            content: contentElement
-        };
-        this.parent(options);
-        this.open();
-    }
 });
 
 })();
