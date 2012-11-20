@@ -6,7 +6,8 @@
 (function() {
 if (!this.MooUI) this.MooUI = {};
 Locale.define('zh-CHS', 'MooUI_Openbox', {
-    ajaxError: '内容获取失败。'
+    ajaxError: '内容获取失败。',
+    imageError: '图片加载失败'
 });
 
 MooUI.Openbox = new Class({
@@ -32,7 +33,7 @@ MooUI.Openbox = new Class({
         dragAble: false,
         resizeAble: false,
         position: null,
-        duration: 200,
+        duration: 400,
         buttons: [],
         css: {
             openbox:    'openbox',
@@ -50,8 +51,8 @@ MooUI.Openbox = new Class({
     },
 
     initialize: function (options) {
-        this.id = options.id = options.id || String.uniqueID();
         this.setOptions(options);
+        this.id = this.options.id || String.uniqueID();
         this.css = this.options.css;
         this.createBox();
         this.tween = new Fx.Tween(this.box, {
@@ -62,8 +63,13 @@ MooUI.Openbox = new Class({
                 this.box.setStyle('visibility', 'visible');
             }.bind(this),
             onComplete: function () {
-                if (this.box.getStyle('opacity') == 0)
-                    this.box.setStyle('visibility', 'hidden');
+                if (this.box.getStyle('opacity') == 0) {
+                    this.box.setStyles({
+                        left: 9999,
+                        top: -9999,
+                        visibility: 'hidden'
+                    });
+                }
             }.bind(this)
         });
     },
@@ -158,9 +164,7 @@ MooUI.Openbox = new Class({
             'class': this.css.title
         }).inject(this.innerBox);
 
-        new Element('h3', {
-            'html': this.options.title || ''
-        }).inject(titleBar);
+        this.set('title', this.options.title || '');
 
         //drag
         if (this.options.dragAble) {
@@ -231,10 +235,10 @@ MooUI.Openbox = new Class({
     open: function (opacity) {
         if (this.isOpen) return this;
         if (this.overlay) this.overlay.open();
-        this._resize();
-        this.arise();
         opacity = opacity || this.options.opacity;
         this.tween.start(opacity);
+        this._resize();
+        this.arise();
         this.isOpen = true;
 
         return this;
@@ -258,7 +262,10 @@ MooUI.Openbox = new Class({
     set: function (property, content) {
         switch (property) {
             case 'title':
-                this.titleBar.getElement('h3').set('html', content);
+                if (typeOf(content) == 'element')
+                    this.titleBar.empty().grab(content);
+                else
+                    this.titleBar.empty().grab(new Element('h3', {'html': content }));
                 break;
             case 'content':
                 this.contentBox.empty();
@@ -395,93 +402,203 @@ MooUI.Openbox.Request = new Class({
 MooUI.Openbox.Image = new Class({
     Extends: MooUI.Openbox,
     options: {
-        images: [],
-        showTitle: -1,
-        destroyOnClose: false
+        destroyOnClose: false,
+        showTitle: false,
+        key: 'href',
+        css: {
+            openbox: 'openbox openbox-image',
+            bottom: 'openbox-bottom',
+            next: 'm-icon-right m-icon-huge',
+            previous: 'm-icon-left m-icon-huge'
+        }
     },
 
-    initialize: function(options) {
+    initialize: function(images, options) {
 		this.parent(options);
-		this.url = '';
-		if(this.options.url) this.load();
-	},
-	_resize: function() {
-		//get the largest possible height
-		var maxHeight = window.getSize().y - this.options.pad;
+        this.images = [];
+        this.index = 0;
+        this.stack = new Element('div', {
+            styles: {
+                position: 'absolute',
+                visibility: 'hidden',
+                left: 9999,
+                top: -9999
+            }
+        }).inject(document.body);
+        $$(images).each(function (el) {
+            this.addImage(el);
+        }.bind(this));
 
-		//get the image size
-		var imageDimensions = document.id(this.image).retrieve('dimensions');
+        this.createBottom();
+	},
+
+    open: function (opacity) {
+        if (this.isOpen) return this;
+        if (this.overlay) this.overlay.open();
+        this.box.setStyles({
+            opacity: opacity || this.options.opacity,
+            zIndex: Object.topZIndex(),
+            visibility: 'visible'
+        });
+        this.isOpen = true;
+
+        return this;
+    },
+
+    createBottom: function () {
+        var bottom = this.bottomBox = new Element('div', {
+            'class': this.css.bottom
+        }).inject(this.innerBox);
+        this.previousBtn = new Element('a', {
+            'href': 'javascript:;',
+            'class': this.css.previous,
+            'events': {
+                'click': this.previous.bind(this)
+            }
+        }).inject(bottom);
+        this.nextBtn = new Element('a', {
+            'href': 'javascript:;',
+            'class': this.css.next,
+            'events': {
+                'click': this.next.bind(this)
+            }
+        }).inject(bottom);
+    },
+
+    addImage: function (el) {
+        var uid = String.uniqueID();
+        var img = {
+            uid: uid,
+            el: el,
+            url: el.get(this.options.key)
+        };
+        this.images.push(img);
+        el.addEvent('click', function (event) {
+            event.preventDefault();
+            this.change(uid);
+        }.bind(this));
+    },
+
+    getImage: function (uid) {
+        var img = null;
+        this.images.each(function (item) {
+            if (item.uid == uid) img = item;
+        });
+        return img;
+    },
+
+    next: function () {
+        if (this.index >= this.images.length - 1) return this;
+        this.change(this.images[this.index + 1]);
+        return this;
+    },
+
+    previous: function () {
+        if (this.index <= 0) return this;
+        this.change(this.images[this.index - 1]);
+        return this;
+    },
+
+    change: function (image) {
+        this.open();
+        this.contentBox.addClass('loading');
+        this.mask({ 'class': 'mask-loading' });
+        this._position();
+
+        var self = this;
+        if (typeOf(image) == 'string')
+            image = this.getImage(image);
+        var _load = function (img) {
+            self.unmask();
+            if (self.currentImage) self.currentImage.inject(self.stack);
+            self.set('content', img);
+            self.currentImage = img;
+            self._resize();
+            img.fade('hide').fade('in');
+        };
+
+        this.mask();
+        if (image.img) {
+            _load(image.img);
+        } else {
+            image.img = new Element('img', {
+                src: image.url,
+                events: {
+                    load: function() {
+                        this.inject(self.stack).store('size', this.getSize());
+                        _load(this);
+                    },
+                    error: function() {
+                        this.fireEvent('error');
+                        //this.image.destroy();
+                        //delete this.image;
+                        this.contentBox.set('html',Locale.get('MooUI_Openbox.imageError'));
+                    }.bind(this)
+                },
+                styles: {
+                    width: 'auto',
+                    height: 'auto'
+                }
+            });
+        }
+
+        this.index = this.images.indexOf(image);
+
+        if (this.index <= 0)
+            this.previousBtn.addClass('disabled');
+        else
+            this.previousBtn.removeClass('disabled');
+
+        if (this.index >= this.images.length - 1)
+            this.nextBtn.addClass('disabled');
+        else
+            this.nextBtn.removeClass('disabled');
+
+        return this;
+    },
+
+	_resize: function() {
+        if (!this.currentImage) {
+            this.parent();
+            return this;
+        }
+
+		//get the largest possible height
+		var maxHeight = window.getSize().y - this.options.pad - this.bottomBox.getSize().y,
+            img = this.currentImage,
+		    imageDimensions = img.retrieve('size');
 
 		//if image is taller than window...
-		if(imageDimensions.y > maxHeight) {
-			this.image.height = maxHeight;
-			this.image.width = (imageDimensions.x * (maxHeight / imageDimensions.y));
-			this.image.setStyles({
+		if (imageDimensions.y > maxHeight) {
+			img.height = maxHeight;
+			img.width = (imageDimensions.x * (maxHeight / imageDimensions.y)).toInt();
+			img.setStyles({
 				height: maxHeight,
 				width: (imageDimensions.x * (maxHeight / imageDimensions.y)).toInt()
 			});
 		}
 
-		//get rid of styles
-		this.contentBox.setStyles({ height: '', width: '' });
-
-		//position the box
 		this._position();
+        return this;
 	},
-	load: function(url,title) {
-		//keep current height/width
-		var currentDimensions = { x: '', y: '' };
-		if(this.image) currentDimensions = this.image.getSize();
-		///empty the content, show the indicator
-		this.contentBox.set('html','').addClass('openbox-content-img').setStyles({
-			width: currentDimensions.x,
-			height: currentDimensions.y
-		});
-		this._position();
-		this.mask();
-		this.image = new Element('img',{
-			events: {
-				load: function() {
-					(function() {
-						var setSize = function() { this.image.inject(this.contentBox).store('dimensions',this.image.getSize()); }.bind(this);
-                        this.open();
-						setSize();
-						this._resize();
-						setSize(); //stupid ie
-						this.unmask();
-						this.fireEvent('complete');
-					}).bind(this).delay(10);
-				}.bind(this),
-				error: function() {
-					this.fireEvent('error');
-					this.image.destroy();
-					delete this.image;
-					this.contentBox.set('html',this.options.errorMessage).removeClass('openbox-content-img');
-				}.bind(this),
-				click: function() {
-					this.close();
-				}.bind(this)
-			},
-			styles: {
-				width: 'auto',
-				height: 'auto'
-			}
-		});
-		this.image.src = url || this.options.url;
-		if(title && this.titleBar) this.titleBar.getElement('span').set('html',title);
-		return this;
-	}
+
+    destroy: function () {
+        this.stack.destroy();
+        this.parent();
+    }
+
 });
 
+/*弃用中...
 MooUI.Openbox.IFrame = new Class({
     Extends: MooUI.Openbox,
 
     options: {
         url: '',
-        domain: '*'/*,
-        initData: null,
-        callback: null,
-        onReceive: null*/
+        domain: '*',
+        //initData: null,
+        //callback: null,
+        //onReceive: null
     },
 
     initialize: function (options) {
@@ -559,5 +676,5 @@ MooUI.Openbox.IFrame = new Class({
     }
 
 });
-
+*/
 })();

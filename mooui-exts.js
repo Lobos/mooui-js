@@ -62,7 +62,7 @@
     Object.extend('topZIndex', function () {
         return ZINDEX++;
     });
-    Element.implement('topZIndex', function () {
+    Element.implement('raiseTop', function () {
         return this.setStyle('z-index', Object.topZIndex());
     });
 
