@@ -12,6 +12,13 @@
     MooUI.Global = new new Class({
         initialize: function () {
             this.pages = {};
+        },
+
+        // 依赖 MooUI.Openbox
+        alert: function (message) {
+            new MooUI.Openbox({
+
+            }).open();
         }
     });
 })();
