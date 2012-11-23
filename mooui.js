@@ -42,10 +42,14 @@ MooUI.Global = new new Class({
     },
 
     confirm: function (message, fn, options) {
+        if (typeOf(fn) != 'function') {
+            options = fn;
+            fn = null;
+        }
+
         options = Object.merge({
             width: 420,
             overlayOpacity: 0,
-            opacity: 0.92,
             showTitle: false,
             showClose: false,
             destroyOnClose: true,
@@ -54,7 +58,10 @@ MooUI.Global = new new Class({
                 openbox: 'openbox openbox-confirm'
             },
             buttons: [
-                { text: Locale.get('MooUI.btn_ok'), type: 'primary', events: fn },
+                { text: Locale.get('MooUI.btn_ok'), type: 'primary', events: function () {
+                    if (fn) fn();
+                    this.close();
+                } },
                 { text: Locale.get('MooUI.btn_cancel') }
             ]
         }, options);

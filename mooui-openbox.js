@@ -41,7 +41,7 @@ MooUI.Openbox = new Class({
             title:      'openbox-title',
             drag:       'openbox-drag',
             resize:     'openbox-resize',
-            close:      'openbox-close m-icon-close m-icon-huge',
+            close:      'close',
             body:       'openbox-body',
             content:    'openbox-content',
             buttons:    'openbox-buttons'
@@ -86,7 +86,6 @@ MooUI.Openbox = new Class({
             });
         }
 
-        var self = this;
         var container = document.id(this.options.container) || document.body;
 
         this.box = new Element('div', {
@@ -140,8 +139,8 @@ MooUI.Openbox = new Class({
                 'href': 'javascript:;',
                 'events': {
                     'click': function () {
-                        self.close();
-                    }
+                        this.close();
+                    }.bind(this)
                 }
             }).inject(this.innerBox);
         }
@@ -187,7 +186,7 @@ MooUI.Openbox = new Class({
         if (!events)
             events = { click: this.close.bind(this) };
         else if (typeOf(events) == 'function')
-            events = { click: events };
+            events = { click: events.bind(this) };
 
         this.buttons[text] = (new Element('button', {
             'class': 'btn btn-' + (type || ''),
@@ -411,12 +410,14 @@ MooUI.Openbox.Image = new Class({
         destroyOnClose: false,
         showTitle: false,
         key: 'href',
-        opacity: 0.4,
+        opacity: 1,
         css: {
             openbox: 'openbox openbox-image',
             bottom: 'openbox-bottom',
             next: 'm-icon-right m-icon-huge',
-            previous: 'm-icon-left m-icon-huge'
+            previous: 'm-icon-left m-icon-huge',
+            close: 'image-close m-icon-close m-icon-huge',
+            tip: 'openbox-tip'
         }
     },
 
@@ -479,6 +480,7 @@ MooUI.Openbox.Image = new Class({
         var img = {
             uid: uid,
             el: el,
+            title: el.get('title'),
             url: el.get(this.options.key)
         };
         this.images.push(img);
@@ -516,25 +518,36 @@ MooUI.Openbox.Image = new Class({
         var self = this;
         if (typeOf(image) == 'string')
             image = this.getImage(image);
-        var _load = function (img) {
+        var _load = function (img, title) {
             self.unmask();
             if (self.currentImage) self.currentImage.inject(self.stack);
             self.currentImage = img;
             self.set('content', img);
-            self._resize();
+            if (title)
+                new Element('div', {
+                    html: '<p>' + title + '</p>',
+                    title: 'close',
+                    'class': self.css.tip,
+                    events: {
+                        click: function () {
+                            this.fade('out');
+                        }
+                    }
+                }).inject(self.contentBox);
 
+            self._resize();
             img.fade('hide').fade('in');
         };
 
         this.mask();
         if (image.img) {
-            _load(image.img);
+            _load(image.img, image.title);
         } else {
             image.img = new Element('img', {
                 events: {
                     load: function() {
                         this.inject(self.stack).store('size', this.getSize());
-                        _load(this);
+                        _load(this, image.title);
                     },
                     error: function() {
                         this.fireEvent('error');
