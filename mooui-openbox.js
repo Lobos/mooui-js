@@ -297,14 +297,15 @@ MooUI.Openbox = new Class({
 
     mask: function (loading) {
         if (loading === undefined) loading = true;
+
+        if (loading)
+            this.contentBox.addClass('loading');
+
         var opts = loading ? { 'class': 'mask-loading' } : {};
         if (this.options.maskAll)
             this.innerBox.mask(opts);
         else
             this.contentBox.mask(opts);
-
-        if (loading)
-            this.contentBox.addClass('loading');
 
         return this;
     },
