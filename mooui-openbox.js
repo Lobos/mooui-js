@@ -410,14 +410,15 @@ MooUI.Openbox.Image = new Class({
     options: {
         destroyOnClose: false,
         showTitle: false,
+        showClose: false,
         key: 'href',
         opacity: 1,
         css: {
             openbox: 'openbox openbox-image',
             bottom: 'openbox-bottom',
-            next: 'm-icon-right m-icon-huge',
-            previous: 'm-icon-left m-icon-huge',
-            close: 'image-close m-icon-close m-icon-huge',
+            next: 'icon-metro-right icon-huge',
+            previous: 'icon-metro-left icon-huge',
+            close: 'image-close icon-metro-close icon-huge',
             tip: 'openbox-tip'
         }
     },
@@ -472,6 +473,16 @@ MooUI.Openbox.Image = new Class({
             'class': this.css.next,
             'events': {
                 'click': this.next.bind(this)
+            }
+        }).inject(bottom);
+
+        new Element('a', {
+            'class': this.css.close,
+            'href': 'javascript:;',
+            'events': {
+                'click': function () {
+                    this.close();
+                }.bind(this)
             }
         }).inject(bottom);
     },
