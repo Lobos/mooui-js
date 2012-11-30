@@ -22,7 +22,6 @@ MooUI.DatePicker = new Class({
     Implements: [Options, Events],
 
     options: {
-        destroyOnClose: true,
         bind: null,
         format: '%Y-%m-%d', //mootools Date format
         css: {
@@ -146,7 +145,7 @@ MooUI.DatePicker = new Class({
                 events: {
                     click: function () {
                         this.yearHandle.set('html', _gl('year').format(y)).store('year', y);
-                        this.drawMonth();
+                        this.drawMonth.delay(10, this);
                     }.bind(this)
                 }
             }).inject(ul);
@@ -170,7 +169,7 @@ MooUI.DatePicker = new Class({
                 events: {
                     click: function () {
                         this.monthHandle.set('html', m).store('month', i);
-                        this.drawDay(i);
+                        this.drawDay.delay(10, this, i);
                     }.bind(this)
                 }
             }).inject(ul);
