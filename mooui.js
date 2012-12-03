@@ -113,6 +113,7 @@ MooUI.Global = new new Class({
             new Request.JSON(options).send(form);
         });
     }
+
 });
 
 })();

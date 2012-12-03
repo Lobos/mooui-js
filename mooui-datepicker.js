@@ -11,10 +11,11 @@ if (!this.MooUI) this.MooUI = {};
 Locale.define('zh-CHS', 'MooUI_DatePicker', {
     year: '{0}年',
     months: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
-    weeks: ['日', '一', '二', '三', '四', '五', '六']
+    weeks: ['日', '一', '二', '三', '四', '五', '六'],
+    format: '%Y-%m-%d'
 });
 
-var _gl = function (key) {
+var _get_locale = function (key) {
     return Locale.get('MooUI_DatePicker.' + key);
 };
 
@@ -23,13 +24,14 @@ MooUI.DatePicker = new Class({
 
     options: {
         bind: null,
-        format: '%Y-%m-%d', //mootools Date format
         css: {
             picker:             'date-picker',
             header:             'date-header',
+            input:              'input-append input-date',
             nextMonth:          'icon-metro-right icon-large right',
             previousMonth:      'icon-metro-left icon-large',
             active:             'active',
+            icon:               'icon-calendar',
             yearSelect:         'year-select unstyled',
             monthSelect:        'month-select unstyled'
         }
@@ -120,9 +122,13 @@ MooUI.DatePicker = new Class({
 
     bind: function (inputs) {
         var self = this;
-        $$(inputs).addEvent('click', function () {
-            self.bindInput = this;
-            self.open.delay(5, self, [this.get('value')]);
+        $$(inputs).each(function (el) {
+            if (el.retrieve('datepicker')) return;
+            el.store('datepicker', self);
+            el.set('readonly', 'readonly').addEvent('click', function () {
+                self.bindInput = this;
+                self.open.delay(5, self, [this.get('value')]);
+            });
         });
         return this;
     },
@@ -133,7 +139,7 @@ MooUI.DatePicker = new Class({
         });
 
         if (year)
-            this.yearHandle.set('html', _gl('year').format(year)).store('year', year);
+            this.yearHandle.set('html', _get_locale('year').format(year)).store('year', year);
         else
             year = this.yearHandle.retrieve('year');
 
@@ -144,7 +150,7 @@ MooUI.DatePicker = new Class({
                 html: y,
                 events: {
                     click: function () {
-                        this.yearHandle.set('html', _gl('year').format(y)).store('year', y);
+                        this.yearHandle.set('html', _get_locale('year').format(y)).store('year', y);
                         this.drawMonth.delay(10, this);
                     }.bind(this)
                 }
@@ -163,7 +169,7 @@ MooUI.DatePicker = new Class({
             'class': this.css.monthSelect
         });
         (12).times(function (i) {
-            var m = _gl('months')[i];
+            var m = _get_locale('months')[i];
             new Element('li', {
                 html: m,
                 events: {
@@ -193,15 +199,15 @@ MooUI.DatePicker = new Class({
         if (year == this.currentDay.getFullYear() && month == this.currentDay.getMonth())
             currentDay = this.currentDay.getDate();
 
-        this.yearHandle.set('html', _gl('year').format(year)).store('year', year);
-        this.monthHandle.set('html', _gl('months')[month]).store('month', month);
+        this.yearHandle.set('html', _get_locale('year').format(year)).store('year', year);
+        this.monthHandle.set('html', _get_locale('months')[month]).store('month', month);
 
         var table = new Element('table');
         //create weeks ======================================
         var weeks = new Element('tr');
         (7).times(function (i) {
             new Element('td', {
-                html: _gl('weeks')[i]
+                html: _get_locale('weeks')[i]
             }).inject(weeks);
         });
         new Element('thead').grab(weeks).inject(table);
@@ -243,7 +249,7 @@ MooUI.DatePicker = new Class({
 
     selectDay: function (day) {
         var date = new Date(this.yearHandle.retrieve('year'), this.monthHandle.retrieve('month'), day);
-        this.bindInput.set('value', date.format(this.options.format));
+        this.bindInput.set('value', date.format(_get_locale('format')));
         this.close();
     },
 
@@ -298,11 +304,16 @@ MooUI.DatePicker = new Class({
     close: function () {
         this.isOpen = false;
         this.picker.hide();
-    },
-
-    destroy: function () {
-        this.picker.destroy();
     }
+});
+
+var datepicker = null,
+    get_dp = function () {
+        if (!datepicker) datepicker = new MooUI.DatePicker();
+        return datepicker;
+    };
+Element.implement('datepicker', function () {
+    get_dp().bind(this);
 });
 
 })();
