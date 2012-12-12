@@ -9,7 +9,7 @@
     if (!this.MooUI) this.MooUI = {};
 
     /* ============= locale ======================*/
-    Locale.define('zh-CHS', 'FormValidator', {
+    Locale.define('zh-CHS', 'MooUIValidator', {
         required: '{0}不能为空',
         alpha: '{0}只允许字母',
         alphanum: '{0}只允许字母、数字和下划线',
@@ -40,7 +40,7 @@
             digit: /^[-+]?[0-9]+$/,
             number: /^[-+]?\d*\.?\d+$/,
             email: /^[a-z0-9._%-]+@[a-z0-9.-]+\.[a-z]{2,4}$/i,
-            phone: /^[\d\s ().-]+$/,
+            tel: /^[\d\s ().-]+$/,
             url: /^(http|https|ftp)\:\/\/[a-z0-9\-\.]+\.[a-z]{2,3}(:[a-z0-9]*)?\/?([a-z0-9\-\._\?\,\'\/\\\+&amp;%\$#\=~])*$/i
         },
 
@@ -118,8 +118,9 @@
             }
 
             //======================== type ===========================
-            if (success && data.type && txt.length > 0 && !this.regexp[data.type].test(txt)) {
-                msg = _getMsg(data.type);
+            var _type =  data.type || element.get('type');
+            if (success && Object.keys(Object.clone(this.regexp)).contains(_type) && txt.length > 0 && !this.regexp[_type].test(txt)) {
+                msg = _getMsg(_type);
                 success = false;
             }
 
@@ -217,7 +218,7 @@
     });
 
     MooUI.Validator.getMsg = function (key) {
-        return Locale.get('FormValidator.' + key)
+        return Locale.get('MooUIValidator.' + key)
     };
 
     MooUI.Validator.MessageBox = {
