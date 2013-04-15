@@ -383,6 +383,7 @@ MooUI.Openbox.Request = new Class({
 
         var opts = {
             update: this.contentBox,
+            method: 'get',
             onSuccess: function () {
                 this.contentBox.removeClass('loading').fade('hide').fade('in');
                 this._resize();
