@@ -325,7 +325,11 @@ MooUI.Openbox = new Class({
             //get the height of the content box
             var max = window.getSize().y - this.options.pad;
             if (this.contentBox.getSize().y > max) height = max;
-            this.contentBox.setStyle('height', height);
+            this.contentBox.setStyles({
+                'height': height,
+                'overflow': 'auto',
+                'max-height': max
+            });
         }
         this._position();
 
