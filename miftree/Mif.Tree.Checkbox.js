@@ -53,14 +53,17 @@ Mif.Tree.implement({
     },
 
     setCheckboxByIds: function (ids) {
-        var nodes = []
+        var nodes = [];
         this.root.recursive(function () {
             nodes.push(this);
         });
         nodes.each(function (n) {
+            if (n.hasChildren()) return;
             n.setCheckboxState('unchecked');
-            if (ids.contains(n.id))
+            if (ids.contains(n.id)) {
                 n.setCheckboxState('checked');
+                n.setParentCheckbox();
+            }
         });
     }
 

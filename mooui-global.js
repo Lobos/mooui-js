@@ -106,6 +106,7 @@ MooUI.Global = new Class({
         }, options);
         form.addEvent('submit', function (event) {
             event.preventDefault ? event.preventDefault() : event.returnValue = false;
+            if(options.pre) options.pre();
             var suc = true;
             if (fv) suc = fv.validate();
             if (!suc) return false;
