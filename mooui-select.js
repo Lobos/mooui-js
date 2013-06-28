@@ -197,7 +197,7 @@ MooUI.Select = new Class({
         this._detachEvents();
     },
     setBoxPosition: function () {
-        if (Browser.Engine.trident4) {
+        if (Browser.name == 'ie' && Browser.version < 8) {
             if (this.box.getStyle('height').toInt() >= this.options.maxHeight)
                 this.box.setStyle('height', this.options.maxHeight);
             else
