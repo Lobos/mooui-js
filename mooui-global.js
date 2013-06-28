@@ -25,7 +25,7 @@ MooUI.Global = new Class({
         options = Object.merge({
             width: 420,
             overlayOpacity: 0,
-            opacity: 0.92,
+            opacity: 0.95,
             showTitle: false,
             showClose: false,
             destroyOnClose: true,
@@ -106,7 +106,7 @@ MooUI.Global = new Class({
         }, options);
         form.addEvent('submit', function (event) {
             event.preventDefault ? event.preventDefault() : event.returnValue = false;
-            if(options.pre) options.pre();
+            if(options.init) options.init();
             var suc = true;
             if (fv) suc = fv.validate();
             if (!suc) return false;

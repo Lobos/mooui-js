@@ -77,10 +77,13 @@
                 this.filterBox.hide();
 
             var header = this.options.header || [];
+            var _count = 0;
             header.each(function (h) {
                 if (!h.filter) return;
                 self.filterBox.grab(self._getFilterItem(h));
+                _count++;
             });
+            if (_count == 0) this.filterBox.hide();
 
             new Element('button', {
                 'html': Locale.get('MooUI_Table.search'),
