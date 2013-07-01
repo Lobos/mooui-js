@@ -77,6 +77,11 @@ MooUI.Select = new Class({
     },
     createData: function (data) {
         var self = this;
+        if (data.length > 0 && typeOf(data[0]) != 'object') {
+            data = data.map(function (d) {
+                return { text: d, value: d };
+            });
+        }
         this.data = data;
         this.box.empty();
         this.links = [];
