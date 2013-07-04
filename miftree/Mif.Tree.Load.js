@@ -90,13 +90,16 @@ Mif.Tree.Node.implement({
 		this.addType('loader');
 		var self = this;
 		function success(json){
-			Mif.Tree.Load.children(json, self, self.tree);
+            Mif.Tree.Load.children(json.data, self, self.tree);
 			delete self.$loading;
 			self.state.loaded = true;
 			self.removeType('loader');
 			Mif.Tree.Draw.update(self);
 			self.fireEvent('load');
 			self.tree.fireEvent('loadNode', self);
+
+            self.toggle(true);
+            self.tree.select(self);
 			return self;
 		}
 		options=Object.append(Object.append(Object.append({
@@ -108,6 +111,18 @@ Mif.Tree.Node.implement({
 		if(options.json) return success(options.json);
 		new Request.JSON(options).send();
 		return this;
-	}
+	},
+
+
+    reload: function(options) {
+        for (var i=this.children.length; i--; ) {
+            this.children[i].remove();
+        }
+        this.$draw = false;
+        this.getDOM('children').innerHTML = '';
+        this.load(options);
+
+		return this;
+    }
 	
 });

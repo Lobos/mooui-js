@@ -83,7 +83,7 @@ Mif.Tree = new Class({
 			mouseleave: this.bound.mouseleave,
 			mousedown: this.bound.mousedown,
 			click: this.bound.toggleClick,
-			dblclick: this.bound.toggleDblclick,
+			dblclick: this.options.dblclick || this.bound.toggleDblclick,
 			selectstart: this.bound.preventDefault
 		});
 		
@@ -258,7 +258,7 @@ Mif.Tree = new Class({
 			}
 		});
 	},
-	
+
 	expandTo: function(node){
 		if (!node) return this;
 		var path = [];

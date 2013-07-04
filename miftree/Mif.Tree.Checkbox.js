@@ -36,15 +36,8 @@ Mif.Tree.implement({
 		return checked;
 	},
 
-    getCheckedIds: function (includePartially) {
-        return this.getCheckedByKey(this.getChecked(includePartially), 'id');
-    },
-
-    getCheckedNames: function (includePartially) {
-        return this.getCheckedByKey(this.getChecked(includePartially), 'name');
-    },
-
-    getCheckedByKey: function (items, key) {
+    getCheckedByKey: function (key, includePartially) {
+        var items = this.getChecked(includePartially);
         var lst = [];
         items.each(function (item) {
             lst.push(item[key]);
@@ -52,7 +45,7 @@ Mif.Tree.implement({
         return lst.join(',');
     },
 
-    setCheckboxByIds: function (ids) {
+    setCheckboxByKeys: function (key, ks) {
         var nodes = [];
         this.root.recursive(function () {
             nodes.push(this);
@@ -60,7 +53,7 @@ Mif.Tree.implement({
         nodes.each(function (n) {
             if (n.hasChildren()) return;
             n.setCheckboxState('unchecked');
-            if (ids.contains(n.id)) {
+            if (ks.contains(n[key])) {
                 n.setCheckboxState('checked');
                 n.setParentCheckbox();
             }
