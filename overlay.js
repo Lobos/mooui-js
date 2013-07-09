@@ -22,7 +22,7 @@ var Overlay = new Class({
 
     options: {
         id: 'overlay',
-        color: '#000',
+        color: '#fff',
         duration: 500,
         opacity: 0.5,
         zIndex: 5000/*,

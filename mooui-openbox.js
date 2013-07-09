@@ -18,11 +18,11 @@ MooUI.Openbox = new Class({
         container: null,
         title: '',
         content: '',
-        pad: 100,
+        pad: 20,
         width: 'auto',
         height: 'auto',
         opacity: 1,
-        overlayOpacity: 0.1,
+        overlayOpacity: 0.5,
         closeOnOverlayClick: true,
         destroyOnClose: false,
         arise: false,
@@ -30,6 +30,7 @@ MooUI.Openbox = new Class({
         maskAll: true,
         showTitle: true,
         showClose: true,
+        fullScreen: false,
         dragAble: false,
         resizeAble: false,
         position: null,
@@ -320,17 +321,29 @@ MooUI.Openbox = new Class({
     },
 
     _resize: function () {
-        var height = this.options.height;
-        if (height == 'auto') {
-            //get the height of the content box
-            var max = window.getSize().y - this.options.pad;
-            if (this.contentBox.getSize().y > max) height = max;
+        if (this.options.fullScreen) {
+            var size = window.getSize(),
+                width = size.x - this.options.pad * 2,
+                height = size.y - this.options.pad * 2 - this.titleBar.outerHeight();
+
             this.contentBox.setStyles({
                 'height': height,
-                'overflow': 'auto',
-                'max-height': max
+                'width': width
             });
+        } else {
+            var height = this.options.height;
+            if (height == 'auto') {
+                //get the height of the content box
+                var max = window.getSize().y - this.options.pad;
+                if (this.contentBox.getSize().y > max) height = max;
+                this.contentBox.setStyles({
+                    'height': height,
+                    'overflow': 'auto',
+                    'max-height': max
+                });
+            }
         }
+
         this._position();
 
         return this;
