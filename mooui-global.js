@@ -15,8 +15,13 @@ Locale.define('zh-CHS', 'MooUI', {
 MooUI.Global = new Class({
     Implements: [Options],
 
+    options: {
+        body: document.body
+    },
+
     initialize: function (options) {
         this.setOptions(options);
+        this.body = document.id(this.options.body);
         this.items = {};
     },
 
@@ -89,7 +94,7 @@ MooUI.Global = new Class({
                     help.set('html', msg);
                 }
             }
-        }, { successHtml: '<i class="icon-ok"></i>' }, options);
+        }, options);
 
         return new MooUI.Validator(form, options);
     },
