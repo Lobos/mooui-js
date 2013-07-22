@@ -134,13 +134,13 @@
             }
 
             //======================== max length =====================
-            if (success && data.maxlen && txt.length_cn() > data.maxlen) {
+            if (success && data.maxlen && txt.lengthCn() > data.maxlen) {
                 msg = _getMsg('maxlen').format(data.maxlen);
                 success = false
             }
 
             //======================= min length ======================
-            if (success && data.minlen && txt.length_cn() < data.minlen) {
+            if (success && data.minlen && txt.lengthCn() < data.minlen) {
                 msg = _getMsg('minlen').format(data.minlen);
                 success = false;
             }
