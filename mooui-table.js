@@ -16,8 +16,9 @@
         Implements: [Options, Events],
         options: {
             request: null,
-            filterAble: false,
+            filterAble: true,
             filterHide: false,
+            toggleItems: false,
             pageAble: true,
             pagination: { size: 0, index: 1 },
             filterCheckbox: null,
@@ -28,6 +29,9 @@
                 bool: 'bool',
 
                 filterBox: 'table-filter form-inline',
+                toggleWrapper: 'toggle-wrapper',
+                toggleOpen: 'toggle-open',
+                toggleClose: 'toggle-close',
 
                 sort: 'sort',
                 sortNormal: 'icon-sort',
@@ -61,17 +65,24 @@
             if (this.options.filterAble)
                 this._createFilter();
 
+            if (this.options.toggleItems)
+                this._createToggleItems();
+
             return this;
+        },
+
+        _getCaption: function () {
+            if (!this.table.getElement('caption'))
+                new Element('caption').inject(this.table, 'top');
+            return this.table.getElement('caption');
         },
 
         _createFilter: function () {
             var self = this;
 
-            if (!this.table.getElement('caption'))
-                new Element('caption', {
-                    'class': this.css.filterBox
-                }).inject(this.table, 'top');
-            this.filterBox = this.table.getElement('caption');
+            this.filterBox = new Element('div', {
+                'class': this.css.filterBox
+            }).inject(this._getCaption());
 
             if (this.options.filterHide)
                 this.filterBox.hide();
@@ -107,7 +118,46 @@
                     }
                 }
             }).inject(this.filterBox);
+        },
 
+        _createToggleItems: function () {
+            var self = this;
+
+            var wrap = new Element('div', {
+                'class': this.css.toggleWrapper
+            }).inject(this._getCaption());
+
+            var header = this.options.header || [];
+            header.each(function (h) {
+                if (!h.name || h.type == 'none') return;
+                new Element('a', {
+                    'class': (h.class && h.class.clean().contains('hidden')) ? self.css.toggleClose : self.css.toggleOpen,
+                    href: 'javascript:;',
+                    html: '<i class="icon-"></i> {0}'.format(h.name),
+                    events: {
+                        'click': function () {
+                            var index = 0,
+                                th = null;
+
+                            self.table.getElements('thead th').each(function (el, i) {
+                                if (el.get('rel') != h.key) return;
+                                th = el;
+                                index = i;
+                            });
+
+                            if (this.get('class') == self.css.toggleOpen) {
+                                this.set('class', self.css.toggleClose);
+                                th.addClass('hidden');
+                                self.toggleColumn(index, true);
+                            } else {
+                                this.set('class', self.css.toggleOpen);
+                                th.removeClass('hidden');
+                                self.toggleColumn(index, false);
+                            }
+                        }
+                    }
+                }).inject(wrap);
+            });
         },
 
         _getFilterItem: function (h) {
@@ -167,6 +217,14 @@
                     break;
             }
             return el;
+        },
+
+        toggleColumn: function (index, hidden) {
+            this.table.getElements('tbody tr').each(function (tr) {
+                var td = tr.getElements('td')[index];
+                if (hidden) td.addClass('hidden');
+                else td.removeClass('hidden');
+            });
         },
 
         filter: function () {
@@ -247,8 +305,12 @@
             };
 
             header.each(function (h) {
-                if (h.type == 'hidden') return;
-                var th = new Element('th', { styles: h.styles }).inject(tr);
+                if (h.type == 'none') return;
+                var th = new Element('th', {
+                    'class': h['class'] || '',
+                    styles: h.styles,
+                    rel: h.key
+                }).inject(tr);
                 switch (h.type) {
                     case 'checkbox':
                         th.addClass(self.css.checkbox);
@@ -301,7 +363,7 @@
                 }
             });
             header.each(function (h) {
-                if (h.type == 'hidden') return;
+                if (h.type == 'none') return;
                 var td = new Element('td', {
                     'styles': h.styles,
                     'class': h['class'] || ''
