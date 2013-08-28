@@ -58,7 +58,7 @@
         }
     });
 
-    var ZINDEX = 1000;
+    var ZINDEX = 2000;
     Object.extend('topZIndex', function () {
         return ZINDEX++;
     });
