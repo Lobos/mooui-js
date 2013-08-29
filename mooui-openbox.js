@@ -434,9 +434,9 @@ MooUI.Openbox.Image = new Class({
         css: {
             openbox: 'openbox openbox-image',
             bottom: 'openbox-bottom',
-            next: 'icon-metro-right icon-huge',
-            previous: 'icon-metro-left icon-huge',
-            close: 'image-close icon-metro-close icon-huge',
+            next: 'icon-chevron-right icon-2x',
+            previous: 'icon-chevron-left icon-2x',
+            close: 'close image-close',
             tip: 'openbox-tip'
         }
     },
