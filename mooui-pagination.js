@@ -124,7 +124,7 @@
                 })
             );
             if (current)
-                li.addClass('disabled');
+                li.addClass('active');
             else if (fn)
                 li.addEvent('click', fn);
 

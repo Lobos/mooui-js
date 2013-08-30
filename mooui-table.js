@@ -42,7 +42,7 @@
                 tdTrue: 'icon-ok',
                 tdFalse: 'icon-remove',
 
-                pagination: 'pagination pagination-small'
+                pagination: 'pagination'
             }
         },
 
