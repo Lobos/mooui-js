@@ -85,7 +85,6 @@ MooUI.Global = new Class({
         options = Object.merge({
             width: 420,
             overlayOpacity: 0,
-            opacity: 0.95,
             showTitle: false,
             showClose: false,
             destroyOnClose: true,

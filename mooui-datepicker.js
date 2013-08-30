@@ -28,10 +28,11 @@ MooUI.DatePicker = new Class({
             picker:             'date-picker',
             header:             'date-header',
             input:              'input-append input-date',
-            nextMonth:          'icon-metro-right icon-large right',
-            previousMonth:      'icon-metro-left icon-large',
+            nextMonth:          'icon-double-angle-right icon-large right',
+            previousMonth:      'icon-double-angle-left icon-large',
             active:             'active',
             icon:               'icon-calendar',
+            year:               'year',
             yearSelect:         'year-select unstyled',
             monthSelect:        'month-select unstyled'
         }
@@ -102,6 +103,7 @@ MooUI.DatePicker = new Class({
 
         this.yearHandle = new Element('a', {
             href: 'javascript:;',
+            'class': this.css.year,
             events: {
                 click: function () {
                     this.drawYear();
