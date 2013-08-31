@@ -155,7 +155,7 @@ MooUI.Global = new Class({
 
     form: function (form, fv, options) {
         form = document.id(form);
-        var btn = form.getElement('[type="submit"]');
+        var btn = options.btn ? document.id(options.btn) : form.getElement('[type="submit"]');
         options = Object.merge({
             url: form.get('action'),
             method: form.get('method'),
