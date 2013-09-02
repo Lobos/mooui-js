@@ -28,6 +28,8 @@
                 checked: 'checked',
                 bool: 'bool',
 
+                rowActive: 'active',
+
                 filterBox: 'table-filter form-inline',
                 toggleWrapper: 'toggle-wrapper',
                 toggleOpen: 'toggle-open',
@@ -35,14 +37,14 @@
 
                 sort: 'sort',
                 sortNormal: 'icon-sort',
-                sortUp: 'icon-sort-up',
-                sortDown: 'icon-sort-down',
+                sortUp: 'icon-caret-up',
+                sortDown: 'icon-caret-down',
                 sortTip: 'sort-tip',
 
                 tdTrue: 'icon-ok',
                 tdFalse: 'icon-remove',
 
-                pagination: 'pagination'
+                pagination: 'pagination pagination-small'
             }
         },
 
@@ -99,7 +101,7 @@
             new Element('button', {
                 'html': Locale.get('MooUI_Table.search'),
                 'type': 'button',
-                'class': 'btn btn-primary',
+                'class': 'btn',
                 'events': {
                     'click': function () {
                         self.filter();
@@ -110,7 +112,7 @@
             new Element('button', {
                 'html': Locale.get('MooUI_Table.clear'),
                 'type': 'button',
-                'class': 'btn btn-inverse',
+                'class': 'btn',
                 'events': {
                     'click': function () {
                         self.fireEvent('filterClear');
@@ -263,42 +265,17 @@
                     };
                     el = new Element('a', {
                         html: h.name,
-                        'class': self.css.sort,
                         href: 'javascript:;',
                         events: {
                             click: function () {
-                                tip.toggle();
-                                tip.isVisible() ? icon.fade('hide') : icon.fade('show');
+                                var sort = icon.hasClass(self.css.sortDown);
+                                _clearSort();
+                                self.setSort(sort, h.key).load();
+                                icon.set('class', sort ? self.css.sortUp : self.css.sortDown);
                             }
                         }
                     }).inject(th);
                     icon = new Element('i', { 'class': self.css.sortNormal }).inject(el);
-                    tip = new Element('div', {
-                        'class': self.css.sortTip,
-                        'styles': {
-                            'left': icon.getPosition(th).x
-                        }
-                    }).inject(el);
-                    new Element('i', {
-                        'class': self.css.sortUp,
-                        'events': {
-                            click: function () {
-                                self.setSort(true, h.key).load();
-                                _clearSort();
-                                icon.set('class', self.css.sortUp);
-                            }
-                        }
-                    }).inject(tip);
-                    new Element('i', {
-                        'class': self.css.sortDown,
-                        'events': {
-                            click: function () {
-                                self.setSort(false, h.key).load();
-                                _clearSort();
-                                icon.set('class', self.css.sortDown);
-                            }
-                        }
-                    }).inject(tip);
                 } else {
                     new Element('span', { 'html':h.name }).inject(th);
                 }
@@ -372,7 +349,8 @@
                     case 'checkbox':
                         td.addClass(self.css.checkbox);
                         var cbk = new Element('a').store('item', item).inject(td);
-                        td.addEvent('click', function () {
+                        tr.addEvent('click', function () {
+                            tr.toggleClass(self.css.rowActive);
                             cbk.toggleClass(self.css.checked);
                             if (h.click) h.click(cbk.hasClass(self.css.checked), item);
                         });
@@ -396,10 +374,12 @@
         checkAll: function (b) {
             if (b) {
                 this.checkAllHandle.addClass(this.css.checked);
-                this.table.getElements('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
+                this.table.getElement('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
+                this.table.getElement('tbody tr').addClass(this.css.rowActive);
             } else {
                 this.checkAllHandle.removeClass(this.css.checked);
-                this.table.getElements('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
+                this.table.getElement('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
+                this.table.getElement('tbody tr').removeClass(this.css.rowActive);
             }
             this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             return this;
