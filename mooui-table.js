@@ -133,7 +133,7 @@
             header.each(function (h) {
                 if (!h.name || h.type == 'none') return;
                 new Element('a', {
-                    'class': (h.class && h.class.clean().contains('hidden')) ? self.css.toggleClose : self.css.toggleOpen,
+                    'class': (h['class'] && h['class'].clean().contains('hidden')) ? self.css.toggleClose : self.css.toggleOpen,
                     href: 'javascript:;',
                     html: '<i class="icon-"></i> {0}'.format(h.name),
                     events: {
@@ -374,12 +374,12 @@
         checkAll: function (b) {
             if (b) {
                 this.checkAllHandle.addClass(this.css.checked);
-                this.table.getElement('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
-                this.table.getElement('tbody tr').addClass(this.css.rowActive);
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').addClass(this.css.checked);
+                this.table.getElements('tbody tr').addClass(this.css.rowActive);
             } else {
                 this.checkAllHandle.removeClass(this.css.checked);
-                this.table.getElement('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
-                this.table.getElement('tbody tr').removeClass(this.css.rowActive);
+                this.table.getElements('tbody .' + this.css.checkbox + ' > a').removeClass(this.css.checked);
+                this.table.getElements('tbody tr').removeClass(this.css.rowActive);
             }
             this.table.getElements('tbody .' + this.css.checkbox + ' > a').fireEvent('click');
             return this;
