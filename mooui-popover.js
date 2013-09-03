@@ -14,7 +14,7 @@
             placement: 'bottom',
             html: '',
             destroyOnClose: false,
-            closeDelay: 3000 //等于0不自动关闭
+            closeDelay: 0 //等于0不自动关闭
         },
 
         initialize: function (el, options) {
@@ -25,20 +25,26 @@
         createPop: function (html) {
             this.pop = new Element('div', {
                 'class': 'popover',
-                html: html || this.options.html,
                 events: {
                     click: function () {
                         this.close();
                     }.bind(this)
                 }
             }).inject(this.element, 'after').fade('hide');
+            new Element('a', {
+                href: 'javascript:;',
+                'class': 'close'
+            }).inject(this.pop);
+            this.content = new Element('div', {
+                html: html || this.options.html
+            }).inject(this.pop);
             this.pop.addClass(this.options.placement);
         },
 
         show: function (html, options) {
             this.setOptions(options);
             if (!this.pop) this.createPop(html);
-            else if (html) this.pop.set('html', html);
+            else if (html) this.content.set('html', html);
             this.pop.fade('in');
 
             var pos = this.element.getPosition(this.element.getOffsetParent()),
