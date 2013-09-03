@@ -13,7 +13,8 @@
         options: {
             placement: 'bottom',
             html: '',
-            destroyOnClose: false
+            destroyOnClose: false,
+            closeDelay: 3000 //等于0不自动关闭
         },
 
         initialize: function (el, options) {
@@ -30,7 +31,7 @@
                         this.close();
                     }.bind(this)
                 }
-            }).inject(this.element, 'after');
+            }).inject(this.element, 'after').fade('hide');
             this.pop.addClass(this.options.placement);
         },
 
@@ -38,6 +39,7 @@
             this.setOptions(options);
             if (!this.pop) this.createPop(html);
             else if (html) this.pop.set('html', html);
+            this.pop.fade('in');
 
             var pos = this.element.getPosition(this.element.getOffsetParent()),
                 placement = this.options.placement,
@@ -62,7 +64,9 @@
                 top: top,
                 zIndex: Object.topZIndex()
             });
-            this.pop.show();
+
+            if (this.options.closeDelay > 0)
+                setTimeout(this.close.bind(this), this.options.closeDelay);
         },
 
         close: function () {
@@ -70,7 +74,7 @@
                 if (this.pop) this.pop.destroy();
                 this.pop = null;
             } else {
-                this.pop.hide();
+                this.pop.fade('hide');
             }
         },
 
