@@ -158,7 +158,7 @@ MooUI.Global = new Class({
         var btn = options.btn ? document.id(options.btn) : form.getElement('[type="submit"]');
         options = Object.merge({
             url: form.get('action'),
-            method: form.get('method'),
+            method: form.get('method') || 'post',
             onComplete: function () {
                 if (btn) btn.removeProperty('disabled');
             }
